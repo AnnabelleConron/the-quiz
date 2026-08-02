@@ -1,0 +1,12 @@
+---
+// Fallback shell for editions published after the last build.
+// Cloudflare serves this page for any /quiz/<n> path with no prerendered
+// file, via the /quiz/* rewrite in public/_redirects. The edition number is
+// read from the URL in the browser.
+import Base from '../../layouts/Base.astro';
+import QuizApp from '../../components/QuizApp.astro';
+---
+
+<Base title="The Quizz">
+  <QuizApp />
+</Base>

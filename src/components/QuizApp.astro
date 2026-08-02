@@ -1,0 +1,34 @@
+---
+// Client-rendered quiz. The edition can come from the page (prerendered
+// permalinks) or from the URL path (the fallback shell for editions
+// published after the last build).
+interface Props {
+  edition?: string | number | null;
+}
+
+const { edition = null } = Astro.props;
+---
+
+<header class="site-top">
+  <a href="/" class="mono">The Quizz</a>
+  <a href="/archive" class="mono">Archive</a>
+</header>
+<main id="quiz-app" data-edition={edition != null ? String(edition) : undefined}>
+  <noscript>
+    <p>The quiz needs JavaScript to load questions and record scores.</p>
+  </noscript>
+</main>
+
+<script>
+  import { initQuiz } from '../lib/quiz-render.js';
+
+  const root = document.getElementById('quiz-app');
+  if (root) {
+    let edition = root.dataset.edition ?? null;
+    if (edition == null) {
+      const match = location.pathname.match(/\/quiz\/(\d+)/);
+      edition = match ? match[1] : null;
+    }
+    initQuiz(root, { edition: edition == null ? null : Number(edition) });
+  }
+</script>

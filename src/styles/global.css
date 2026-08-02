@@ -1,4 +1,4 @@
-/* The Saturday Quiz, global styles.
+/* The Quizz, global styles.
    Newspaper utility aesthetic: web-safe serif, hairline rules, flat everything. */
 
 :root {
@@ -193,6 +193,90 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+/* Site top bar */
+.site-top {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 16px;
+}
+
+/* Quiz page */
+.social-proof {
+  margin: 12px 0;
+}
+
+.category-heading {
+  margin: 16px 0 4px;
+}
+
+.question {
+  padding: 12px 0;
+}
+
+.question-text {
+  margin-bottom: 10px;
+}
+
+.question-number {
+  font-weight: bold;
+}
+
+.q-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 44px;
+}
+
+.stat {
+  margin-top: 8px;
+}
+
+/* Fixed tally bar */
+.tally {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.tally-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tally-error {
+  color: var(--ink);
+}
+
+/* Final score panel */
+.final-panel {
+  padding: 24px 0;
+  text-align: center;
+}
+
+.score-big {
+  font-size: 4rem;
+  font-weight: bold;
+  line-height: 1.1;
+  margin: 8px 0;
+}
+
+.final-panel button {
+  margin-top: 12px;
 }
 
 /* Utility */

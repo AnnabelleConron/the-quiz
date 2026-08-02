@@ -1,0 +1,49 @@
+---
+// Prerendered permalink for each edition known at build time.
+// The page shell carries real per-edition Open Graph tags, while the quiz
+// content itself is always fetched live in the browser.
+// Editions published after the last build are served by ./index.astro via
+// the /quiz/* rewrite in public/_redirects.
+import { createClient } from '@supabase/supabase-js';
+import Base from '../../layouts/Base.astro';
+import QuizApp from '../../components/QuizApp.astro';
+
+export async function getStaticPaths() {
+  const url = import.meta.env.PUBLIC_SUPABASE_URL;
+  const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+  try {
+    // The anon key only sees published quizzes, so drafts can never be
+    // prerendered.
+    const supabase = createClient(url, key);
+    const { data, error } = await supabase
+      .from('quizzes')
+      .select('edition_number, categories(name, sort_order)')
+      .order('edition_number');
+    if (error) return [];
+    return (data ?? []).map((quiz) => ({
+      params: { edition: String(quiz.edition_number) },
+      props: {
+        categoryNames: [...quiz.categories]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((c) => c.name),
+      },
+    }));
+  } catch {
+    return [];
+  }
+}
+
+const { edition } = Astro.params;
+const { categoryNames } = Astro.props;
+
+const title = `The Quizz, Edition ${edition}`;
+const description =
+  categoryNames.length > 0
+    ? `Categories: ${categoryNames.join(', ')}.`
+    : 'A weekly quiz of 16 questions across 4 categories.';
+---
+
+<Base title={title} description={description}>
+  <QuizApp edition={edition} />
+</Base>
