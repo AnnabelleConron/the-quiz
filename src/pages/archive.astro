@@ -1,0 +1,95 @@
+---
+// Archive: every visible edition, newest first, with live stats and this
+// device's score where it played. Past editions stay fully playable.
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="The Quizz, Archive" description="Every edition of The Quizz.">
+  <header class="site-top">
+    <a href="/" class="mono">The Quizz</a>
+    <span class="mono">Archive</span>
+  </header>
+  <main id="archive-app">
+    <noscript>
+      <p>The archive needs JavaScript to load editions.</p>
+    </noscript>
+  </main>
+</Base>
+
+<script>
+  import { supabase } from '../lib/supabase.js';
+  import { el, formatDate } from '../lib/quiz-render.js';
+  import { loadProgress } from '../lib/session.js';
+
+  const root = document.getElementById('archive-app');
+
+  (async () => {
+    if (!root) return;
+    root.textContent = 'Loading the archive.';
+    try {
+      const [{ data: quizzes, error: quizError }, { data: stats }] = await Promise.all([
+        supabase
+          .from('quizzes')
+          .select('id, edition_number, title, publish_at, categories(name, sort_order)')
+          .order('edition_number', { ascending: false }),
+        supabase.rpc('get_archive_stats'),
+      ]);
+      if (quizError) throw quizError;
+
+      if (!quizzes || quizzes.length === 0) {
+        root.replaceChildren(el('p', { text: 'No editions yet.' }));
+        return;
+      }
+
+      const statMap = new Map((stats || []).map((r) => [r.quiz_id, r]));
+      const rows = quizzes.map((quiz) => {
+        const s = statMap.get(quiz.id);
+        const count = s ? Number(s.completion_count) : 0;
+        const avg = s ? s.avg_score : null;
+        const mine = loadProgress(quiz.id).completed;
+
+        // Real numbers or nothing. The average appears from two completions
+        // onward, matching the final panel rule.
+        const parts = [];
+        if (count >= 1) {
+          parts.push(count === 1 ? '1 group played' : count + ' groups played');
+        }
+        if (count >= 2 && avg != null) {
+          parts.push('average ' + avg);
+        }
+        if (mine) {
+          parts.push('your score ' + mine.score + '/16');
+        }
+
+        const heading = el('h2', {}, [
+          el('a', {
+            href: '/quiz/' + quiz.edition_number,
+            text: 'Edition ' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : ''),
+          }),
+        ]);
+
+        return el('article', { class: 'archive-row' }, [
+          heading,
+          el('p', { class: 'archive-date mono', text: formatDate(quiz.publish_at) }),
+          el('p', {
+            class: 'archive-categories',
+            text: [...quiz.categories]
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map((c) => c.name)
+              .join(', '),
+          }),
+          ...(parts.length > 0
+            ? [el('p', { class: 'archive-stats mono', text: parts.join(', ') })]
+            : []),
+        ]);
+      });
+
+      root.replaceChildren(...rows);
+    } catch (err) {
+      console.error('[quizz]', err);
+      root.replaceChildren(
+        el('p', { text: 'Something went wrong loading the archive. Refresh to try again.' })
+      );
+    }
+  })();
+</script>

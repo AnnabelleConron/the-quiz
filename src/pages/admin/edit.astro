@@ -1,0 +1,235 @@
+---
+// Quiz editor: 4 category names and 16 question and answer pairs.
+// Save keeps ids stable (update in place) so existing responses stay linked.
+// The Schedule button refuses to schedule while anything is empty and lists
+// what is missing. The database trigger enforces the same rule.
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="The Quizz, Editor" noIndex={true}>
+  <div id="admin-app"></div>
+</Base>
+
+<script>
+  import { supabase } from '../../lib/supabase.js';
+  import { el } from '../../lib/quiz-render.js';
+  import {
+    requireAdmin,
+    adminNav,
+    fetchQuizById,
+    sydneyInputValue,
+    parseSydneyInput,
+  } from '../../lib/admin.js';
+
+  const root = document.getElementById('admin-app');
+
+  function renderEditor(quiz) {
+    const categories = [...quiz.categories].sort((a, b) => a.sort_order - b.sort_order);
+    const questions = [...quiz.questions].sort((a, b) => a.sort_order - b.sort_order);
+
+    const titleInput = el('input', { type: 'text', value: quiz.title || '' });
+    const publishInput = el('input', {
+      type: 'datetime-local',
+      value: sydneyInputValue(quiz.publish_at),
+    });
+
+    const categoryInputs = new Map();
+    const questionInputs = new Map();
+
+    const categoryBlocks = categories.map((category, index) => {
+      const nameInput = el('input', { type: 'text', value: category.name });
+      categoryInputs.set(category.id, nameInput);
+      const questionFields = questions
+        .filter((q) => q.category_id === category.id)
+        .map((q) => {
+          const questionArea = el('textarea', { rows: '2' });
+          questionArea.value = q.question_text;
+          const answerInput = el('input', { type: 'text', value: q.answer_text });
+          questionInputs.set(q.id, { question: questionArea, answer: answerInput });
+          return el('div', { class: 'editor-question' }, [
+            el('p', { class: 'label', text: 'Question ' + q.sort_order }),
+            questionArea,
+            el('p', { class: 'label', text: 'Answer ' + q.sort_order }),
+            answerInput,
+          ]);
+        });
+      return el('section', { class: 'editor-category' }, [
+        el('p', { class: 'label', text: 'Category ' + (index + 1) }),
+        nameInput,
+        ...questionFields,
+      ]);
+    });
+
+    const statusLine = el('p', { class: 'mono editor-status', 'aria-live': 'polite' });
+    const issuesBox = el('div', { class: 'editor-issues hidden', role: 'alert' });
+    const saveBtn = el('button', { text: 'Save' });
+    const scheduleBtn = el('button', { text: 'Schedule' });
+    const isDraft = quiz.status === 'draft';
+
+    function collect() {
+      return {
+        title: titleInput.value.trim() || null,
+        publishAt: parseSydneyInput(publishInput.value),
+        categories: categories.map((c) => ({
+          id: c.id,
+          quiz_id: quiz.id,
+          sort_order: c.sort_order,
+          name: categoryInputs.get(c.id).value.trim(),
+        })),
+        questions: questions.map((q) => ({
+          id: q.id,
+          quiz_id: quiz.id,
+          category_id: q.category_id,
+          sort_order: q.sort_order,
+          question_text: questionInputs.get(q.id).question.value.trim(),
+          answer_text: questionInputs.get(q.id).answer.value.trim(),
+        })),
+      };
+    }
+
+    function completenessIssues(data) {
+      const issues = [];
+      data.categories.forEach((c, i) => {
+        if (!c.name) issues.push('Category ' + (i + 1) + ' name');
+      });
+      data.questions.forEach((q) => {
+        if (!q.question_text) issues.push('Question ' + q.sort_order + ' text');
+        if (!q.answer_text) issues.push('Question ' + q.sort_order + ' answer');
+      });
+      return issues;
+    }
+
+    async function save() {
+      const data = collect();
+      if (!data.publishAt) {
+        statusLine.textContent = 'Publish time is invalid.';
+        return false;
+      }
+      const { error: quizError } = await supabase
+        .from('quizzes')
+        .update({ title: data.title, publish_at: data.publishAt.toISOString() })
+        .eq('id', quiz.id);
+      if (quizError) {
+        statusLine.textContent = 'Save failed: ' + quizError.message;
+        return false;
+      }
+      const { error: catError } = await supabase.from('categories').upsert(data.categories);
+      if (catError) {
+        statusLine.textContent = 'Save failed: ' + catError.message;
+        return false;
+      }
+      const { error: qError } = await supabase.from('questions').upsert(data.questions);
+      if (qError) {
+        statusLine.textContent = 'Save failed: ' + qError.message;
+        return false;
+      }
+      return true;
+    }
+
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      issuesBox.classList.add('hidden');
+      statusLine.textContent = 'Saving.';
+      const ok = await save();
+      if (ok) statusLine.textContent = 'Saved.';
+      saveBtn.disabled = false;
+    });
+
+    scheduleBtn.addEventListener('click', async () => {
+      scheduleBtn.disabled = true;
+      statusLine.textContent = '';
+      const data = collect();
+      const issues = completenessIssues(data);
+      if (issues.length > 0) {
+        issuesBox.replaceChildren(
+          el('p', { class: 'mono', text: 'Cannot schedule. Missing:' }),
+          el(
+            'ul',
+            {},
+            issues.map((issue) => el('li', { text: issue }))
+          )
+        );
+        issuesBox.classList.remove('hidden');
+        scheduleBtn.disabled = false;
+        return;
+      }
+      issuesBox.classList.add('hidden');
+      statusLine.textContent = 'Saving.';
+      const saved = await save();
+      if (!saved) {
+        scheduleBtn.disabled = false;
+        return;
+      }
+      const { error } = await supabase
+        .from('quizzes')
+        .update({ status: 'scheduled' })
+        .eq('id', quiz.id);
+      if (error) {
+        statusLine.textContent = 'Schedule failed: ' + error.message;
+        scheduleBtn.disabled = false;
+        return;
+      }
+      statusLine.textContent = 'Scheduled.';
+      quiz.status = 'scheduled';
+      statusValue.textContent = quiz.status;
+      scheduleBtn.remove();
+    });
+
+    const statusValue = el('td', { text: quiz.status });
+
+    root.replaceChildren(
+      adminNav(),
+      el('h1', { text: 'Edition ' + quiz.edition_number }),
+      el('table', { class: 'meta-table editor-meta' }, [
+        el('tbody', {}, [
+          el('tr', {}, [el('th', { scope: 'row', text: 'Status' }), statusValue]),
+          el('tr', {}, [
+            el('th', { scope: 'row', text: 'Publish' }),
+            el('td', {}, [
+              publishInput,
+              el('span', { class: 'mono editor-tz', text: 'Sydney time' }),
+            ]),
+          ]),
+          el('tr', {}, [
+            el('th', { scope: 'row', text: 'Title' }),
+            el('td', {}, [titleInput]),
+          ]),
+        ]),
+      ]),
+      ...categoryBlocks,
+      el('div', { class: 'editor-actions' }, [
+        saveBtn,
+        ...(isDraft ? [scheduleBtn] : []),
+        el('a', {
+          class: 'btn',
+          href: '/admin/preview?id=' + quiz.id,
+          text: 'Preview',
+        }),
+      ]),
+      issuesBox,
+      statusLine
+    );
+  }
+
+  (async () => {
+    if (!root) return;
+    const session = await requireAdmin(root);
+    if (!session) return;
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) {
+      root.replaceChildren(adminNav(), el('p', { text: 'No quiz id given.' }));
+      return;
+    }
+    try {
+      const quiz = await fetchQuizById(id);
+      if (!quiz) {
+        root.replaceChildren(adminNav(), el('p', { text: 'Quiz not found.' }));
+        return;
+      }
+      renderEditor(quiz);
+    } catch (err) {
+      console.error('[quizz admin]', err);
+      root.replaceChildren(adminNav(), el('p', { text: 'Could not load the quiz.' }));
+    }
+  })();
+</script>

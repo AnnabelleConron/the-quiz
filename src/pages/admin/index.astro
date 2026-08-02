@@ -1,0 +1,116 @@
+---
+// Admin dashboard: quiz list and the New quiz button.
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="The Quizz, Admin" noIndex={true}>
+  <div id="admin-app"></div>
+</Base>
+
+<script>
+  import { supabase } from '../../lib/supabase.js';
+  import { el } from '../../lib/quiz-render.js';
+  import {
+    requireAdmin,
+    adminNav,
+    nextSaturdaySydney6am,
+    formatSydney,
+  } from '../../lib/admin.js';
+
+  const root = document.getElementById('admin-app');
+
+  async function createQuiz(quizzes, button, errorLine) {
+    button.disabled = true;
+    errorLine.classList.add('hidden');
+    try {
+      const maxEdition = quizzes.reduce((max, q) => Math.max(max, q.edition_number), 0);
+      const publishAt = nextSaturdaySydney6am();
+      const { data: quiz, error } = await supabase
+        .from('quizzes')
+        .insert({
+          edition_number: maxEdition + 1,
+          publish_at: publishAt.toISOString(),
+          status: 'draft',
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      const { data: cats, error: catError } = await supabase
+        .from('categories')
+        .insert([1, 2, 3, 4].map((i) => ({ quiz_id: quiz.id, name: '', sort_order: i })))
+        .select('id, sort_order');
+      if (catError) throw catError;
+
+      const sortedCats = [...cats].sort((a, b) => a.sort_order - b.sort_order);
+      const questionRows = [];
+      for (let i = 0; i < 16; i++) {
+        questionRows.push({
+          quiz_id: quiz.id,
+          category_id: sortedCats[Math.floor(i / 4)].id,
+          sort_order: i + 1,
+          question_text: '',
+          answer_text: '',
+        });
+      }
+      const { error: qError } = await supabase.from('questions').insert(questionRows);
+      if (qError) throw qError;
+
+      location.href = '/admin/edit?id=' + quiz.id;
+    } catch (err) {
+      console.error('[quizz admin]', err);
+      errorLine.textContent = 'Could not create the quiz: ' + (err.message || 'unknown error');
+      errorLine.classList.remove('hidden');
+      button.disabled = false;
+    }
+  }
+
+  async function renderDashboard() {
+    const { data: quizzes, error } = await supabase
+      .from('quizzes')
+      .select('id, edition_number, title, status, publish_at')
+      .order('edition_number', { ascending: false });
+    if (error) {
+      root.replaceChildren(adminNav(), el('p', { text: 'Could not load quizzes.' }));
+      return;
+    }
+
+    const newBtn = el('button', { text: 'New quiz' });
+    const errorLine = el('p', { class: 'mono form-error hidden', role: 'alert' });
+    newBtn.addEventListener('click', () => createQuiz(quizzes, newBtn, errorLine));
+
+    const rows = quizzes.map((quiz) =>
+      el('article', { class: 'admin-row' }, [
+        el('h2', {}, [
+          el('a', {
+            href: '/admin/edit?id=' + quiz.id,
+            text:
+              'Edition ' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : ''),
+          }),
+        ]),
+        el('p', {
+          class: 'mono',
+          text: quiz.status + ', ' + formatSydney(quiz.publish_at),
+        }),
+        el('p', { class: 'admin-actions mono' }, [
+          el('a', { href: '/admin/edit?id=' + quiz.id, text: 'Edit' }),
+          el('a', { href: '/admin/preview?id=' + quiz.id, text: 'Preview' }),
+          el('a', { href: '/admin/analytics?id=' + quiz.id, text: 'Analytics' }),
+        ]),
+      ])
+    );
+
+    root.replaceChildren(
+      adminNav(),
+      el('div', { class: 'admin-head' }, [el('h1', { text: 'Quizzes' }), newBtn]),
+      errorLine,
+      ...(rows.length > 0 ? rows : [el('p', { text: 'No quizzes yet.' })])
+    );
+  }
+
+  (async () => {
+    if (!root) return;
+    const session = await requireAdmin(root);
+    if (session) await renderDashboard();
+  })();
+</script>

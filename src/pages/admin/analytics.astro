@@ -1,0 +1,150 @@
+---
+// Analytics. Overview: completions and average per edition over time.
+// Per-quiz view (?id=): completion count, average, per-question percentages.
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="The Quizz, Analytics" noIndex={true}>
+  <div id="admin-app"></div>
+</Base>
+
+<script>
+  import { supabase } from '../../lib/supabase.js';
+  import { el } from '../../lib/quiz-render.js';
+  import { requireAdmin, adminNav, fetchQuizById, formatSydney } from '../../lib/admin.js';
+
+  const root = document.getElementById('admin-app');
+
+  function bar(value, max) {
+    const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+    const fill = el('div', { class: 'bar' });
+    fill.style.width = pct + '%';
+    return el('div', { class: 'bar-track' }, [fill]);
+  }
+
+  async function renderOverview() {
+    const [{ data: quizzes, error }, { data: stats }] = await Promise.all([
+      supabase
+        .from('quizzes')
+        .select('id, edition_number, title, status, publish_at')
+        .order('edition_number', { ascending: true }),
+      supabase.rpc('get_archive_stats'),
+    ]);
+    if (error) {
+      root.replaceChildren(adminNav(), el('p', { text: 'Could not load analytics.' }));
+      return;
+    }
+    const statMap = new Map((stats || []).map((r) => [r.quiz_id, r]));
+    const maxCompletions = Math.max(
+      1,
+      ...(stats || []).map((r) => Number(r.completion_count))
+    );
+
+    const rows = (quizzes || []).map((quiz) => {
+      const s = statMap.get(quiz.id);
+      const count = s ? Number(s.completion_count) : 0;
+      const avg = s && s.avg_score != null ? s.avg_score : null;
+      return el('tr', {}, [
+        el('td', { class: 'mono' }, [
+          el('a', { href: '/admin/analytics?id=' + quiz.id, text: '#' + quiz.edition_number }),
+        ]),
+        el('td', { class: 'mono', text: quiz.status }),
+        el('td', {}, [el('span', { class: 'mono', text: String(count) }), bar(count, maxCompletions)]),
+        el('td', {}, [
+          el('span', { class: 'mono', text: avg != null ? String(avg) : '' }),
+          ...(avg != null ? [bar(avg, 16)] : []),
+        ]),
+      ]);
+    });
+
+    root.replaceChildren(
+      adminNav(),
+      el('h1', { text: 'Analytics' }),
+      el('table', { class: 'stat-table' }, [
+        el('thead', {}, [
+          el('tr', {}, [
+            el('th', { class: 'label', text: 'Edition' }),
+            el('th', { class: 'label', text: 'Status' }),
+            el('th', { class: 'label', text: 'Completions' }),
+            el('th', { class: 'label', text: 'Average' }),
+          ]),
+        ]),
+        el('tbody', {}, rows),
+      ])
+    );
+  }
+
+  async function renderQuiz(id) {
+    const [quiz, { data: quizStats }, { data: questionStats }] = await Promise.all([
+      fetchQuizById(id),
+      supabase.rpc('get_quiz_stats', { p_quiz_id: id }),
+      supabase.rpc('get_question_stats', { p_quiz_id: id }),
+    ]);
+    if (!quiz) {
+      root.replaceChildren(adminNav(), el('p', { text: 'Quiz not found.' }));
+      return;
+    }
+    const stats = Array.isArray(quizStats) ? quizStats[0] : quizStats;
+    const count = stats ? Number(stats.completion_count) : 0;
+    const avg = stats && stats.avg_score != null ? stats.avg_score : null;
+    const statMap = new Map((questionStats || []).map((r) => [r.question_id, r]));
+    const questions = [...quiz.questions].sort((a, b) => a.sort_order - b.sort_order);
+
+    const rows = questions.map((q) => {
+      const s = statMap.get(q.id);
+      const responses = s ? Number(s.response_count) : 0;
+      const pct = s && s.pct_correct != null ? Number(s.pct_correct) : null;
+      return el('tr', {}, [
+        el('td', { class: 'mono', text: String(q.sort_order) }),
+        el('td', { class: 'stat-question', text: q.question_text }),
+        el('td', {}, [
+          el('span', {
+            class: 'mono',
+            text: pct != null ? pct + '%' : String(responses) + ' responses',
+          }),
+          ...(pct != null ? [bar(pct, 100)] : []),
+        ]),
+      ]);
+    });
+
+    root.replaceChildren(
+      adminNav(),
+      el('h1', {
+        text: 'Edition ' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : ''),
+      }),
+      el('table', { class: 'meta-table' }, [
+        el('tbody', {}, [
+          el('tr', {}, [el('th', { scope: 'row', text: 'Status' }), el('td', { text: quiz.status })]),
+          el('tr', {}, [
+            el('th', { scope: 'row', text: 'Publish' }),
+            el('td', { text: formatSydney(quiz.publish_at) }),
+          ]),
+          el('tr', {}, [
+            el('th', { scope: 'row', text: 'Completions' }),
+            el('td', { text: String(count) }),
+          ]),
+          el('tr', {}, [
+            el('th', { scope: 'row', text: 'Average' }),
+            el('td', { text: avg != null ? String(avg) : '' }),
+          ]),
+        ]),
+      ]),
+      el('h2', { class: 'stat-heading', text: 'Correct answers per question' }),
+      el('table', { class: 'stat-table' }, [el('tbody', {}, rows)])
+    );
+  }
+
+  (async () => {
+    if (!root) return;
+    const session = await requireAdmin(root);
+    if (!session) return;
+    const id = new URLSearchParams(location.search).get('id');
+    try {
+      if (id) await renderQuiz(id);
+      else await renderOverview();
+    } catch (err) {
+      console.error('[quizz admin]', err);
+      root.replaceChildren(adminNav(), el('p', { text: 'Could not load analytics.' }));
+    }
+  })();
+</script>

@@ -1,0 +1,44 @@
+---
+// Preview: renders the quiz exactly as the public sees it, through the same
+// renderer. Marking works but nothing is recorded.
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="The Quizz, Preview" noIndex={true}>
+  <div id="admin-app"></div>
+</Base>
+
+<script>
+  import { el, initQuiz } from '../../lib/quiz-render.js';
+  import { requireAdmin, adminNav, fetchQuizById } from '../../lib/admin.js';
+
+  const root = document.getElementById('admin-app');
+
+  (async () => {
+    if (!root) return;
+    const session = await requireAdmin(root);
+    if (!session) return;
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) {
+      root.replaceChildren(adminNav(), el('p', { text: 'No quiz id given.' }));
+      return;
+    }
+    try {
+      const quiz = await fetchQuizById(id);
+      if (!quiz) {
+        root.replaceChildren(adminNav(), el('p', { text: 'Quiz not found.' }));
+        return;
+      }
+      const quizRoot = el('main');
+      root.replaceChildren(
+        adminNav(),
+        el('p', { class: 'mono admin-note', text: 'Preview. Marking here is not recorded.' }),
+        quizRoot
+      );
+      await initQuiz(quizRoot, { quiz, preview: true });
+    } catch (err) {
+      console.error('[quizz admin]', err);
+      root.replaceChildren(adminNav(), el('p', { text: 'Could not load the quiz.' }));
+    }
+  })();
+</script>

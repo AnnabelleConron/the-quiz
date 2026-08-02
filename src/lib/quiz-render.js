@@ -7,10 +7,14 @@ import { supabase } from './supabase.js';
 import { getSessionId, loadProgress, saveProgress } from './session.js';
 
 const TOTAL_QUESTIONS = 16;
-const MIN_STAT_RESPONSES = 5;
-const MIN_SOCIAL_PROOF = 5;
 
-function el(tag, attrs = {}, children = []) {
+// Pen-stroke tick and cross, thin stroke, square caps. Static markup only.
+const TICK_SVG =
+  '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M5 12.5 10 17.5 19 6.5"/></svg>';
+const CROSS_SVG =
+  '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M6.5 6.5 17.5 17.5 M17.5 6.5 6.5 17.5"/></svg>';
+
+export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
     if (value == null) continue;
@@ -26,7 +30,7 @@ function bySortOrder(a, b) {
   return a.sort_order - b.sort_order;
 }
 
-function formatDate(iso) {
+export function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-AU', {
     timeZone: 'Australia/Sydney',
     weekday: 'long',
@@ -48,6 +52,18 @@ export async function fetchQuizByEdition(edition) {
   return data;
 }
 
+export async function fetchLatestQuiz() {
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select(
+      'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
+    )
+    .order('edition_number', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  return data && data[0] ? data[0] : null;
+}
+
 export async function fetchQuizStats(quizId) {
   const { data, error } = await supabase.rpc('get_quiz_stats', { p_quiz_id: quizId });
   if (error) throw error;
@@ -59,7 +75,7 @@ export function buildShareText(editionNumber, score) {
   return 'The Quizz #' + editionNumber + ', ' + score + '/16\n' + url;
 }
 
-async function copyToClipboard(text) {
+export async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
     return true;
@@ -166,12 +182,16 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     ])
   );
 
-  // Social proof, hidden below the threshold.
-  if (quizStats && Number(quizStats.completion_count) >= MIN_SOCIAL_PROOF) {
+  // Social proof: real numbers or nothing. Hidden only at zero completions.
+  const playedCount = quizStats ? Number(quizStats.completion_count) : 0;
+  if (playedCount >= 1) {
     frag.appendChild(
       el('p', {
         class: 'social-proof mono',
-        text: quizStats.completion_count + ' groups have played this week',
+        text:
+          playedCount === 1
+            ? '1 group has played this week'
+            : playedCount + ' groups have played this week',
       })
     );
   }
@@ -211,18 +231,21 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     for (const btn of markButtons) btn.disabled = true;
   }
 
-  function renderFinalPanel(score, avgScore) {
+  function renderFinalPanel(score, avgScore, completionCount) {
     const shareBtn = el('button', { text: 'Copy share text' });
     shareBtn.addEventListener('click', async () => {
       const ok = await copyToClipboard(buildShareText(quiz.edition_number, score));
       shareBtn.textContent = ok ? 'Copied' : 'Copy failed, select the text manually';
     });
+    // With a single completion the average is the submitter's own score
+    // reflected back, so the line only appears from two completions onward.
+    const showAverage = completionCount >= 2 && avgScore != null;
     const parts = [
       el('hr'),
       el('section', { class: 'final-panel' }, [
         el('p', { class: 'label', text: 'Final score' }),
         el('p', { class: 'score-big', text: score + '/16' }),
-        ...(avgScore != null
+        ...(showAverage
           ? [el('p', { text: 'The average this week is ' + avgScore + '.' })]
           : []),
         shareBtn,
@@ -231,12 +254,13 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     finalPanelSlot.replaceChildren(...parts);
   }
 
-  function complete(score, avgScore) {
-    progress.completed = { score, avg: avgScore };
+  function complete(score, avgScore, completionCount) {
+    progress.completed = { score, avg: avgScore, count: completionCount };
     persist();
     lockMarking();
     tallyBar.remove();
-    renderFinalPanel(score, avgScore);
+    document.body.classList.remove('has-tally');
+    renderFinalPanel(score, avgScore, completionCount);
     finalPanelSlot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -245,7 +269,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     tallyError.classList.add('hidden');
 
     if (preview) {
-      complete(correctCount(), null);
+      complete(correctCount(), null, 0);
       return;
     }
 
@@ -262,13 +286,15 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       if (/already submitted/i.test(error.message)) {
         // Server has a completion for this device, honour it.
         let avg = null;
+        let count = 0;
         try {
           const fresh = await fetchQuizStats(quiz.id);
           avg = fresh ? fresh.avg_score : null;
+          count = fresh ? Number(fresh.completion_count) : 0;
         } catch {
           avg = null;
         }
-        complete(correctCount(), avg);
+        complete(correctCount(), avg, count);
         return;
       }
       finishBtn.disabled = false;
@@ -278,7 +304,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     }
 
     const row = Array.isArray(data) ? data[0] : data;
-    complete(row.score, row.avg_score);
+    complete(row.score, row.avg_score, Number(row.completion_count));
   }
 
   finishBtn.addEventListener('click', submit);
@@ -286,11 +312,9 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   function showStat(questionId, statNode) {
     getQuestionStats().then((map) => {
       const s = map.get(questionId);
-      const enough =
-        s && Number(s.response_count) >= MIN_STAT_RESPONSES && s.pct_correct != null;
-      statNode.textContent = enough
-        ? s.pct_correct + '% of players got this right'
-        : 'Not enough data yet';
+      // Real numbers or nothing: with zero responses the line does not exist.
+      if (!s || Number(s.response_count) < 1 || s.pct_correct == null) return;
+      statNode.textContent = s.pct_correct + '% of players got this right';
       statNode.classList.remove('hidden');
       statNode.classList.add('fade-in');
     });
@@ -298,30 +322,34 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
 
   function buildQuestion(q) {
     const answer = el('span', {
-      class: 'answer-upside-down hidden',
+      class: 'answer-upside-down',
       text: q.answer_text,
     });
+    const answerRow = el('div', { class: 'answer-row hidden' }, [answer]);
     const revealBtn = el('button', { class: 'reveal-btn', text: 'Reveal answer' });
+    const revealRow = el('div', { class: 'reveal-row' }, [revealBtn]);
     const tick = el('button', {
       class: 'mark-btn',
       'aria-label': 'Mark question ' + q.sort_order + ' correct',
       'aria-pressed': 'false',
-      text: '✓',
     });
+    tick.innerHTML = TICK_SVG;
     const cross = el('button', {
       class: 'mark-btn',
       'aria-label': 'Mark question ' + q.sort_order + ' incorrect',
       'aria-pressed': 'false',
-      text: '✗',
     });
+    cross.innerHTML = CROSS_SVG;
     markButtons.push(tick, cross);
-    const marksWrap = el('span', { class: 'marks hidden' }, [tick, cross]);
+    const marksRow = el('div', { class: 'marks-row hidden' }, [
+      el('span', { class: 'marks' }, [tick, cross]),
+    ]);
     const stat = el('p', { class: 'stat mono hidden', 'aria-live': 'polite' });
 
     function reveal(save) {
-      answer.classList.remove('hidden');
-      marksWrap.classList.remove('hidden');
-      revealBtn.remove();
+      answerRow.classList.remove('hidden');
+      marksRow.classList.remove('hidden');
+      revealRow.remove();
       if (save) {
         progress.revealed[q.id] = true;
         persist();
@@ -348,7 +376,9 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
         el('span', { class: 'question-number', text: q.sort_order + '. ' }),
         document.createTextNode(q.question_text),
       ]),
-      el('div', { class: 'q-actions' }, [revealBtn, answer, marksWrap]),
+      revealRow,
+      answerRow,
+      marksRow,
       stat,
     ]);
 
@@ -362,9 +392,9 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     return node;
   }
 
-  // Questions grouped under category headings.
+  // Questions grouped under category headings. Rules between blocks come
+  // from CSS borders so the rhythm stays consistent.
   for (const category of categories) {
-    frag.appendChild(el('hr'));
     frag.appendChild(el('h2', { class: 'category-heading', text: category.name }));
     for (const q of questionsByCategory.get(category.id) || []) {
       frag.appendChild(buildQuestion(q));
@@ -379,9 +409,13 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     lockMarking();
     const freshAvg =
       quizStats && quizStats.avg_score != null ? quizStats.avg_score : progress.completed.avg;
-    renderFinalPanel(progress.completed.score, freshAvg);
+    const freshCount = quizStats
+      ? Number(quizStats.completion_count)
+      : progress.completed.count || 0;
+    renderFinalPanel(progress.completed.score, freshAvg, freshCount);
   } else {
     document.body.appendChild(tallyBar);
+    document.body.classList.add('has-tally');
     updateTally();
   }
 }

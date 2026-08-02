@@ -1,14 +1,97 @@
 ---
+// Home: the current week's quiz (most recent visible edition).
+// If this device already completed it, a compact result panel is shown
+// instead of a fresh quiz.
 import Base from '../layouts/Base.astro';
 ---
 
 <Base>
-  <header>
+  <header class="home-header">
     <h1>The Quizz</h1>
-    <p class="mono">16 questions, 4 categories, every Saturday</p>
+    <p class="mono">16 questions, 4 categories,<br />every Saturday</p>
   </header>
   <hr />
-  <main>
-    <p>This week's quiz will appear here.</p>
+  <main id="home-app">
+    <noscript>
+      <p>The quiz needs JavaScript to load questions and record scores.</p>
+    </noscript>
   </main>
+  <footer class="home-footer">
+    <hr />
+    <p class="mono"><a href="/archive">All editions</a></p>
+  </footer>
 </Base>
+
+<script>
+  import {
+    initQuiz,
+    fetchLatestQuiz,
+    fetchQuizStats,
+    buildShareText,
+    copyToClipboard,
+    formatDate,
+    el,
+  } from '../lib/quiz-render.js';
+  import { loadProgress } from '../lib/session.js';
+
+  const root = document.getElementById('home-app');
+
+  async function renderCompleted(quiz, completed) {
+    let stats = null;
+    try {
+      stats = await fetchQuizStats(quiz.id);
+    } catch {
+      // stats are decorative, the panel still works without them
+    }
+    const count = stats ? Number(stats.completion_count) : completed.count || 0;
+    const avg = stats && stats.avg_score != null ? stats.avg_score : completed.avg;
+    const showAverage = count >= 2 && avg != null;
+
+    const shareBtn = el('button', { text: 'Copy share text' });
+    shareBtn.addEventListener('click', async () => {
+      const ok = await copyToClipboard(buildShareText(quiz.edition_number, completed.score));
+      shareBtn.textContent = ok ? 'Copied' : 'Copy failed, select the text manually';
+    });
+
+    root.replaceChildren(
+      el('section', { class: 'final-panel' }, [
+        el('p', {
+          class: 'mono',
+          text: 'Edition #' + quiz.edition_number + ', ' + formatDate(quiz.publish_at),
+        }),
+        el('p', { class: 'label', text: 'Your score' }),
+        el('p', { class: 'score-big', text: completed.score + '/16' }),
+        ...(showAverage
+          ? [el('p', { text: 'The average this week is ' + avg + '.' })]
+          : []),
+        shareBtn,
+        el('p', { class: 'panel-link' }, [
+          el('a', { href: '/quiz/' + quiz.edition_number, text: 'See the quiz' }),
+        ]),
+      ])
+    );
+  }
+
+  (async () => {
+    if (!root) return;
+    root.textContent = 'Loading the quiz.';
+    try {
+      const quiz = await fetchLatestQuiz();
+      if (!quiz) {
+        root.replaceChildren(el('p', { text: 'No quiz has been published yet.' }));
+        return;
+      }
+      const progress = loadProgress(quiz.id);
+      if (progress.completed) {
+        await renderCompleted(quiz, progress.completed);
+      } else {
+        await initQuiz(root, { quiz });
+      }
+    } catch (err) {
+      console.error('[quizz]', err);
+      root.replaceChildren(
+        el('p', { text: 'Something went wrong loading the quiz. Refresh to try again.' })
+      );
+    }
+  })();
+</script>

@@ -1,5 +1,6 @@
 /* The Quizz, global styles.
-   Newspaper utility aesthetic: web-safe serif, hairline rules, flat everything. */
+   Newspaper utility aesthetic: web-safe serif, hairline rules, flat everything.
+   All spacing comes from the 8px-base scale below. */
 
 :root {
   --paper: #fdfdfa;
@@ -9,6 +10,23 @@
   --muted: #444444;
   --font-body: Georgia, 'Times New Roman', Times, serif;
   --font-mono: 'Courier New', Courier, monospace;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+
+  /* Page gutter, wider from small-tablet width up */
+  --gutter: 16px;
+}
+
+@media (min-width: 480px) {
+  :root {
+    --gutter: 24px;
+  }
 }
 
 * {
@@ -22,14 +40,20 @@ html {
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 17px;
-  line-height: 1.45;
+  line-height: 1.5;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
   max-width: 640px;
   margin: 0 auto;
-  padding: 0 16px 64px;
+  padding: 0 var(--gutter) var(--space-6);
+}
+
+/* Extra clearance while the fixed tally bar is on screen, including iOS
+   safe areas, so the last question is never hidden behind it. */
+body.has-tally {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 
 a {
@@ -78,8 +102,8 @@ hr {
 .meta-table th,
 .meta-table td {
   text-align: left;
-  vertical-align: top;
-  padding: 6px 0;
+  vertical-align: baseline;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -95,7 +119,7 @@ hr {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   width: 7.5em;
-  padding-right: 12px;
+  padding-right: var(--space-3);
 }
 
 /* Flat buttons, minimum 44px tap target */
@@ -111,7 +135,7 @@ button,
   border: 1px solid var(--ink);
   border-radius: 0;
   min-height: 44px;
-  padding: 10px 16px;
+  padding: 10px var(--space-3);
   cursor: pointer;
   text-decoration: none;
 }
@@ -135,17 +159,48 @@ input:focus-visible,
   outline-offset: 2px;
 }
 
-/* Selected state for the tick and cross marks */
-.mark-btn {
-  font-family: var(--font-body);
-  font-size: 1.3rem;
-  min-width: 56px;
-  text-transform: none;
+/* Tick and cross marks: two square cells sharing a hairline border, like
+   cells in a printed grid. Unselected is a black pen stroke on paper,
+   selected is inverted. No other states. */
+.marks {
+  display: inline-flex;
 }
 
-.mark-btn[aria-pressed='true'] {
+.mark-btn {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.mark-btn + .mark-btn {
+  margin-left: -1px;
+}
+
+.mark-btn svg {
+  display: block;
+}
+
+.mark-btn:active {
+  background: transparent;
+  color: var(--ink);
+}
+
+.mark-btn[aria-pressed='true'],
+.mark-btn[aria-pressed='true']:active {
   background: var(--ink);
   color: var(--paper);
+}
+
+.mark-btn:disabled {
+  opacity: 1;
+  cursor: default;
 }
 
 /* Upside-down answer, an intentional homage to printed quizzes */
@@ -195,46 +250,100 @@ textarea {
   resize: vertical;
 }
 
+/* Home page */
+.home-header {
+  padding: var(--space-4) 0 var(--space-3);
+}
+
+.home-header h1 {
+  margin-bottom: var(--space-2);
+}
+
+.home-main {
+  padding: var(--space-4) 0;
+}
+
+.home-footer {
+  margin-top: var(--space-5);
+}
+
+.home-footer p {
+  padding: var(--space-3) 0;
+}
+
+.panel-link {
+  margin-top: var(--space-3);
+}
+
+/* Archive */
+.archive-row {
+  border-top: 1px solid var(--rule);
+  padding: var(--space-4) 0;
+}
+
+.archive-row h2 {
+  margin-bottom: var(--space-2);
+}
+
+.archive-date {
+  margin-bottom: var(--space-2);
+}
+
+.archive-categories {
+  margin-bottom: var(--space-2);
+}
+
 /* Site top bar */
 .site-top {
   display: flex;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--rule);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-3);
 }
 
 /* Quiz page */
 .social-proof {
-  margin: 12px 0;
+  margin: var(--space-3) 0;
 }
 
 .category-heading {
-  margin: 16px 0 4px;
+  margin-top: var(--space-5);
 }
 
+/* Each question is a ruled newspaper row: hairline above, even padding. */
 .question {
-  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  padding: var(--space-4) 0;
+  margin-top: var(--space-2);
+}
+
+.category-heading + .question {
+  margin-top: var(--space-2);
 }
 
 .question-text {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 .question-number {
   font-weight: bold;
 }
 
-.q-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  min-height: 44px;
+.reveal-row {
+  margin-top: var(--space-3);
+}
+
+.answer-row {
+  margin: var(--space-3) 0;
+}
+
+.marks-row {
+  margin-top: var(--space-3);
 }
 
 .stat {
-  margin-top: 8px;
+  margin-top: var(--space-3);
 }
 
 /* Fixed tally bar */
@@ -245,16 +354,17 @@ textarea {
   right: 0;
   background: var(--paper);
   border-top: 1px solid var(--rule);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .tally-inner {
   max-width: 640px;
   margin: 0 auto;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--gutter);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -264,7 +374,7 @@ textarea {
 
 /* Final score panel */
 .final-panel {
-  padding: 24px 0;
+  padding: var(--space-4) 0;
   text-align: center;
 }
 
@@ -272,11 +382,176 @@ textarea {
   font-size: 4rem;
   font-weight: bold;
   line-height: 1.1;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 
 .final-panel button {
-  margin-top: 12px;
+  margin-top: var(--space-3);
+}
+
+/* Admin */
+.admin-login {
+  max-width: 360px;
+  margin: var(--space-6) auto 0;
+}
+
+.admin-login h1 {
+  margin-bottom: var(--space-4);
+}
+
+.admin-login label {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+.admin-login .label {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.admin-login button {
+  margin-top: var(--space-2);
+}
+
+.form-error {
+  margin: var(--space-2) 0;
+}
+
+.admin-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.admin-row {
+  border-top: 1px solid var(--rule);
+  padding: var(--space-4) 0;
+}
+
+.admin-row h2 {
+  margin-bottom: var(--space-2);
+}
+
+.admin-row p {
+  margin-bottom: var(--space-2);
+}
+
+.admin-row p:last-child {
+  margin-bottom: 0;
+}
+
+.admin-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.admin-note {
+  margin: var(--space-3) 0;
+}
+
+.small-btn {
+  min-height: 44px;
+  padding: 10px var(--space-3);
+}
+
+/* Editor */
+.editor-meta {
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.editor-meta input {
+  max-width: 320px;
+}
+
+.editor-tz {
+  display: inline-block;
+  margin-left: var(--space-2);
+}
+
+.editor-category {
+  border-top: 1px solid var(--rule);
+  padding: var(--space-4) 0;
+}
+
+.editor-category > .label {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.editor-question {
+  margin-top: var(--space-4);
+}
+
+.editor-question .label {
+  display: block;
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.editor-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-4);
+}
+
+.editor-actions .btn {
+  line-height: 22px;
+}
+
+.editor-issues {
+  margin-top: var(--space-3);
+  border: 1px solid var(--ink);
+  padding: var(--space-3);
+}
+
+.editor-issues ul {
+  margin-top: var(--space-2);
+  padding-left: var(--space-4);
+}
+
+.editor-status {
+  margin-top: var(--space-3);
+}
+
+/* Analytics */
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-3);
+}
+
+.stat-table th,
+.stat-table td {
+  text-align: left;
+  vertical-align: baseline;
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.stat-table th {
+  font-weight: normal;
+}
+
+.stat-heading {
+  margin-top: var(--space-5);
+}
+
+.stat-question {
+  font-size: 0.9rem;
+}
+
+.bar-track {
+  margin-top: var(--space-1);
+  width: 100%;
+  max-width: 160px;
+}
+
+.bar {
+  height: 8px;
+  background: var(--ink);
 }
 
 /* Utility */
