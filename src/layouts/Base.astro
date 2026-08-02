@@ -1,0 +1,48 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noIndex?: boolean;
+}
+
+const {
+  title = 'The Saturday Quiz',
+  description = 'A weekly quiz of 16 questions across 4 categories, published every Saturday.',
+  noIndex = false,
+} = Astro.props;
+
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {noIndex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={Astro.site ? new URL('/og-image.png', Astro.site).href : '/og-image.png'} />
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+    <!--
+      Cloudflare Web Analytics.
+      Paste your real token in place of REPLACE_WITH_YOUR_TOKEN below.
+      Find it in the Cloudflare dashboard under Analytics and then Web Analytics.
+    -->
+    <script
+      is:inline
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "REPLACE_WITH_YOUR_TOKEN"}'></script>
+  </body>
+</html>

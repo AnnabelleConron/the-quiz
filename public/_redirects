@@ -1,0 +1,5 @@
+# Cloudflare Pages rewrites.
+# Editions published after the last build have no prerendered page,
+# so serve the client-rendered quiz shell for any /quiz/<n> path.
+# Prerendered pages take precedence because static assets are matched first.
+/quiz/* /quiz/ 200
