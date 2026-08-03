@@ -200,7 +200,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   const markButtons = [];
 
   // Tally bar, fixed at the bottom until the quiz is submitted.
-  const tallyText = el('span', { class: 'mono' });
+  const tallyText = el('span', { class: 'mono', role: 'status' });
   const finishBtn = el('button', { class: 'finish-btn hidden', text: 'Finish and submit' });
   const tallyError = el('span', { class: 'mono tally-error hidden', role: 'alert' });
   const tallyBar = el('div', { class: 'tally' }, [
@@ -321,12 +321,18 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   }
 
   function buildQuestion(q) {
-    const answer = el('span', {
-      class: 'answer-upside-down',
-      text: q.answer_text,
-    });
+    // The rotation is purely visual, so screen readers read the answer
+    // normally. The hidden prefix gives it context when focus lands here.
+    const answer = el('span', { class: 'answer-upside-down', tabindex: '-1' }, [
+      el('span', { class: 'visually-hidden', text: 'Answer: ' }),
+      document.createTextNode(q.answer_text),
+    ]);
     const answerRow = el('div', { class: 'answer-row hidden' }, [answer]);
-    const revealBtn = el('button', { class: 'reveal-btn', text: 'Reveal answer' });
+    const revealBtn = el('button', {
+      class: 'reveal-btn',
+      'aria-label': 'Reveal answer to question ' + q.sort_order,
+      text: 'Reveal answer',
+    });
     const revealRow = el('div', { class: 'reveal-row' }, [revealBtn]);
     const tick = el('button', {
       class: 'mark-btn',
@@ -353,6 +359,9 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       if (save) {
         progress.revealed[q.id] = true;
         persist();
+        // The reveal button just disappeared from under the keyboard user,
+        // so move focus to the answer and let screen readers announce it.
+        answer.focus();
       }
     }
 

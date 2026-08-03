@@ -177,6 +177,40 @@ import Base from '../../layouts/Base.astro';
 
     const statusValue = el('td', { text: quiz.status });
 
+    // Draft-only deletion with an inline confirmation step. Scheduled and
+    // published quizzes get no delete control.
+    const deleteBtn = el('button', { class: 'danger-btn', text: 'Delete draft' });
+    const deleteConfirm = el('div', { class: 'editor-issues hidden' }, []);
+    deleteBtn.addEventListener('click', () => {
+      const confirmBtn = el('button', { text: 'Delete' });
+      const cancelBtn = el('button', { text: 'Cancel' });
+      confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        const { error } = await supabase.from('quizzes').delete().eq('id', quiz.id);
+        if (error) {
+          statusLine.textContent = 'Delete failed: ' + error.message;
+          confirmBtn.disabled = false;
+          cancelBtn.disabled = false;
+          return;
+        }
+        location.href = '/admin';
+      });
+      cancelBtn.addEventListener('click', () => {
+        deleteConfirm.classList.add('hidden');
+        deleteBtn.disabled = false;
+      });
+      deleteConfirm.replaceChildren(
+        el('p', {
+          text:
+            'Delete draft edition ' + quiz.edition_number + '? This cannot be undone.',
+        }),
+        el('div', { class: 'editor-actions confirm-actions' }, [confirmBtn, cancelBtn])
+      );
+      deleteConfirm.classList.remove('hidden');
+      deleteBtn.disabled = true;
+    });
+
     root.replaceChildren(
       adminNav(),
       el('h1', { text: 'Edition ' + quiz.edition_number }),
@@ -205,7 +239,9 @@ import Base from '../../layouts/Base.astro';
           href: '/admin/preview?id=' + quiz.id,
           text: 'Preview',
         }),
+        ...(isDraft ? [deleteBtn] : []),
       ]),
+      deleteConfirm,
       issuesBox,
       statusLine
     );
