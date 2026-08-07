@@ -1,0 +1,74 @@
+---
+// The public sticky bar and its menu. Static markup: it needs no quiz data,
+// so it renders at build time and is shared by every public page.
+interface Props {
+  current?: 'home' | 'archive' | 'about' | null;
+}
+
+const { current = null } = Astro.props;
+
+const items = [
+  { num: '01', name: 'Home', href: '/', key: 'home' },
+  { num: '02', name: 'Archive', href: '/archive', key: 'archive' },
+  { num: '03', name: 'About', href: '/about', key: 'about' },
+];
+---
+
+<header class="site-top">
+  <a href="/" class="site-top-name">The Quizz</a>
+  <button
+    type="button"
+    class="menu-toggle"
+    aria-label="Menu"
+    aria-expanded="false"
+    aria-controls="site-menu"
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+</header>
+
+<div id="site-menu" class="site-menu hidden">
+  <div class="site-menu-bar">
+    <span class="site-top-name">The Quizz</span>
+    <button type="button" class="menu-close">Close &times;</button>
+  </div>
+  <div class="site-menu-body">
+    <p class="label label-accent">Contents</p>
+    <nav class="menu-nav" aria-label="Site">
+      {
+        items.map((item) => (
+          <a href={item.href} aria-current={current === item.key ? 'page' : undefined}>
+            <span class="menu-num">{item.num}</span>
+            <span class="menu-name">{item.name}</span>
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</div>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+  const menu = document.getElementById('site-menu');
+  const close = document.querySelector<HTMLButtonElement>('.menu-close');
+
+  if (toggle && menu && close) {
+    function setOpen(open: boolean) {
+      menu!.classList.toggle('hidden', !open);
+      toggle!.setAttribute('aria-expanded', String(open));
+      // The page behind the menu must not scroll under it.
+      document.body.classList.toggle('menu-open', open);
+      // Move focus with the panel, and hand it back when the panel closes.
+      if (open) close!.focus();
+      else toggle!.focus();
+    }
+
+    toggle.addEventListener('click', () => setOpen(menu.classList.contains('hidden')));
+    close.addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !menu.classList.contains('hidden')) setOpen(false);
+    });
+  }
+</script>

@@ -30,6 +30,12 @@ function bySortOrder(a, b) {
   return a.sort_order - b.sort_order;
 }
 
+// Edition and question numbers are always set two digits wide, the way a
+// masthead sets them.
+export function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
 export function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-AU', {
     timeZone: 'Australia/Sydney',
@@ -37,6 +43,36 @@ export function formatDate(iso) {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+  });
+}
+
+// The dateline strip wants the weekday and the date in separate cells.
+export function formatDateline(iso) {
+  const date = new Date(iso);
+  return {
+    weekday: date.toLocaleDateString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      weekday: 'long',
+    }),
+    date: date.toLocaleDateString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+  };
+}
+
+// The standing promise on the footer of every page that knows a date.
+// Editions publish weekly on Saturday mornings, so the next one is seven
+// days on from the one in hand.
+export function formatNextEdition(iso) {
+  const next = new Date(new Date(iso).getTime() + 7 * 86400 * 1000);
+  return next.toLocaleDateString('en-AU', {
+    timeZone: 'Australia/Sydney',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
   });
 }
 
@@ -97,6 +133,49 @@ export async function copyToClipboard(text) {
     area.remove();
     return ok;
   }
+}
+
+// Fires the callback the first time the target is on screen. The quiz uses
+// this instead of a submit button: reaching the end of the page is the act
+// of finishing.
+function whenInView(target, onEnter) {
+  let done = false;
+  let observer = null;
+
+  function stop() {
+    done = true;
+    if (observer) observer.disconnect();
+    window.removeEventListener('scroll', check);
+    window.removeEventListener('resize', check);
+  }
+
+  function enter() {
+    if (done) return;
+    stop();
+    onEnter();
+  }
+
+  function check() {
+    const box = target.getBoundingClientRect();
+    if (box.top < window.innerHeight && box.bottom > 0) enter();
+  }
+
+  if (typeof IntersectionObserver === 'function') {
+    observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) enter();
+    });
+    observer.observe(target);
+  }
+
+  // Belt and braces. The observer is the efficient path, but it is the only
+  // thing standing between a finished quiz and a recorded score, and its
+  // callbacks are tied to the rendering lifecycle. A plain scroll check
+  // costs one rect read per event and only until it fires once.
+  window.addEventListener('scroll', check, { passive: true });
+  window.addEventListener('resize', check);
+  check();
+
+  return stop;
 }
 
 export async function initQuiz(root, options = {}) {
@@ -164,28 +243,47 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
 
   const frag = document.createDocumentFragment();
 
-  // Header: newspaper label and value table.
-  const metaRows = [
-    ['Edition', '#' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : '')],
-    ['Date', formatDate(quiz.publish_at)],
-    ['Categories', categories.map((c) => c.name).join(', ')],
-  ];
+  // --- Masthead, dateline, contents ------------------------------------
+
   frag.appendChild(
-    el('table', { class: 'meta-table' }, [
-      el(
-        'tbody',
-        {},
-        metaRows.map(([label, value]) =>
-          el('tr', {}, [el('th', { scope: 'row', text: label }), el('td', { text: value })])
-        )
-      ),
+    el('div', { class: 'masthead' }, [
+      el('p', { class: 'label masthead-kicker', text: 'The Weekend Quiz' }),
+      el('h1', { class: 'masthead-title', text: 'The Quizz' }),
     ])
   );
+
+  const dateline = formatDateline(quiz.publish_at);
+  frag.appendChild(
+    el('div', { class: 'dateline mono' }, [
+      el('span', { text: 'No. ' + pad2(quiz.edition_number) }),
+      el('span', { class: 'dateline-date', text: dateline.date }),
+      el('span', { text: dateline.weekday }),
+    ])
+  );
+
+  // Contents: the week's four categories at masthead scale, then the one
+  // line of instruction the page needs.
+  const contentsRows = categories.map((category, index) =>
+    el('li', { class: 'contents-row' }, [
+      el('span', { class: 'contents-num mono', text: pad2(index + 1) }),
+      el('h2', { class: 'contents-name', text: category.name }),
+    ])
+  );
+
+  const contents = el('section', { class: 'contents bleed' }, [
+    el('ol', { class: 'contents-list' }, contentsRows),
+    el('p', {
+      class: 'contents-note',
+      text:
+        'Reveal each answer once the table has settled on one, then tick it or cross it. ' +
+        'The score is set when all sixteen are marked.',
+    }),
+  ]);
 
   // Social proof: real numbers or nothing. Hidden only at zero completions.
   const playedCount = quizStats ? Number(quizStats.completion_count) : 0;
   if (playedCount >= 1) {
-    frag.appendChild(
+    contents.appendChild(
       el('p', {
         class: 'social-proof mono',
         text:
@@ -196,18 +294,17 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     );
   }
 
+  frag.appendChild(contents);
+
   const isCompleted = Boolean(progress.completed);
   const markButtons = [];
 
-  // Tally bar, fixed at the bottom until the quiz is submitted.
-  const tallyText = el('span', { class: 'mono', role: 'status' });
-  const finishBtn = el('button', { class: 'finish-btn hidden', text: 'Finish and submit' });
-  const tallyError = el('span', { class: 'mono tally-error hidden', role: 'alert' });
-  const tallyBar = el('div', { class: 'tally' }, [
-    el('div', { class: 'tally-inner' }, [tallyText, tallyError, finishBtn]),
-  ]);
-
-  const finalPanelSlot = el('div');
+  // The end of the page. Holds the score section once the quiz is finished,
+  // and the editor's note until then.
+  const endSlot = el('div', { class: 'quiz-end' });
+  // Announcements for screen readers. Kept outside endSlot so replacing the
+  // end content never destroys the live region.
+  const statusLine = el('p', { class: 'visually-hidden', role: 'status' });
 
   function markedCount() {
     return questions.filter((q) => q.id in progress.marks).length;
@@ -217,56 +314,199 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     return questions.filter((q) => progress.marks[q.id] === true).length;
   }
 
-  function updateTally() {
-    const marked = markedCount();
-    tallyText.textContent = marked + ' of 16 marked, ' + correctCount() + ' correct';
-    finishBtn.classList.toggle('hidden', marked < TOTAL_QUESTIONS);
-  }
-
   function persist() {
     if (!preview) saveProgress(quiz.id, progress);
   }
 
+  // Once the score is set, the marks stop moving. A later tap on a question
+  // higher up the page cannot leave the displayed score stale.
   function lockMarking() {
     for (const btn of markButtons) btn.disabled = true;
   }
 
-  function renderFinalPanel(score, avgScore, completionCount) {
-    const shareBtn = el('button', { text: 'Copy share text' });
-    shareBtn.addEventListener('click', async () => {
-      const ok = await copyToClipboard(buildShareText(quiz.edition_number, score));
-      shareBtn.textContent = ok ? 'Copied' : 'Copy failed, select the text manually';
+  function firstUnmarked() {
+    return questions.find((q) => !(q.id in progress.marks)) || null;
+  }
+
+  // --- The end of the page ---------------------------------------------
+
+  // Scrolled to the end with questions still unmarked. Groups run ahead out
+  // of curiosity, so this state has to read as deliberate.
+  function buildIncompleteNote() {
+    const remaining = TOTAL_QUESTIONS - markedCount();
+    const target = firstUnmarked();
+    const note = el('section', { class: 'endnote' }, [
+      el('p', { class: 'label muted', text: "Editor's note" }),
+      el('p', {
+        class: 'endnote-text',
+        text:
+          'The score is set once every question is marked. ' +
+          (remaining === 1
+            ? 'One question is still unmarked.'
+            : remaining + ' questions are still unmarked.'),
+      }),
+    ]);
+    if (target) {
+      const back = el('button', {
+        type: 'button',
+        class: 'endnote-back',
+        text: '↑ Back to question ' + pad2(target.sort_order),
+      });
+      back.addEventListener('click', () => {
+        const node = document.getElementById('question-' + target.id);
+        if (node) {
+          node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          node.focus({ preventScroll: true });
+        }
+      });
+      note.appendChild(back);
+    }
+    return note;
+  }
+
+  function buildScoreHead() {
+    return el('div', { class: 'score-head' }, [
+      el('p', { class: 'label label-accent', text: 'Your score' }),
+      el('p', { class: 'label muted', text: 'Edition No. ' + pad2(quiz.edition_number) }),
+    ]);
+  }
+
+  // Per-category scores, calculated here from the marks already in
+  // localStorage joined to the category each question belongs to. Nothing
+  // is asked of the database for this.
+  function buildBreakdown() {
+    if (markedCount() < TOTAL_QUESTIONS) return null;
+    const rows = categories.map((category) => {
+      const catQuestions = questionsByCategory.get(category.id) || [];
+      const total = catQuestions.length;
+      if (total === 0) return null;
+      const correct = catQuestions.filter((q) => progress.marks[q.id] === true).length;
+      const fill = el('div', { class: 'bar' });
+      fill.style.width = Math.round((correct / total) * 100) + '%';
+      return el('div', { class: 'breakdown-row' }, [
+        el('p', { class: 'breakdown-name', text: category.name }),
+        el('p', { class: 'breakdown-score' }, [
+          document.createTextNode(String(correct)),
+          el('span', { class: 'breakdown-total', text: '/' + total }),
+        ]),
+        el('div', { class: 'bar-track' }, [fill]),
+      ]);
     });
+    const kept = rows.filter(Boolean);
+    if (kept.length === 0) return null;
+    return el('div', { class: 'score-breakdown' }, [
+      el('p', { class: 'label muted', text: 'By category' }),
+      el('div', { class: 'breakdown-list' }, kept),
+    ]);
+  }
+
+  function buildScorePanel(score, avgScore, completionCount) {
+    const panel = el('section', { class: 'score bleed' }, [
+      buildScoreHead(),
+      el('p', { class: 'score-figure' }, [
+        el('span', { class: 'score-number', text: pad2(score) }),
+        el('span', { class: 'score-total', text: '/16' }),
+      ]),
+    ]);
+
     // With a single completion the average is the submitter's own score
     // reflected back, so the line only appears from two completions onward.
     const showAverage = completionCount >= 2 && avgScore != null;
-    const parts = [
-      el('hr'),
-      el('section', { class: 'final-panel' }, [
-        el('p', { class: 'label', text: 'Final score' }),
-        el('p', { class: 'score-big', text: score + '/16' }),
-        ...(showAverage
-          ? [el('p', { text: 'The average this week is ' + avgScore + '.' })]
-          : []),
-        shareBtn,
-      ]),
-    ];
-    finalPanelSlot.replaceChildren(...parts);
+    if (showAverage) {
+      panel.appendChild(
+        el('div', { class: 'score-stats' }, [
+          el('div', { class: 'score-stat' }, [
+            el('p', { class: 'label muted', text: "Week's average" }),
+            el('p', { class: 'score-stat-value', text: String(avgScore) }),
+          ]),
+          el('div', { class: 'score-stat' }, [
+            el('p', { class: 'label muted', text: 'Players this week' }),
+            el('p', { class: 'score-stat-value', text: String(completionCount) }),
+          ]),
+        ])
+      );
+    } else if (completionCount === 1) {
+      panel.appendChild(
+        el('div', { class: 'score-first' }, [
+          el('p', { class: 'label muted', text: 'First to finish this week' }),
+        ])
+      );
+    }
+
+    const breakdown = buildBreakdown();
+    if (breakdown) panel.appendChild(breakdown);
+
+    const shareBtn = el('button', {
+      type: 'button',
+      class: 'btn-block',
+      text: 'Copy result to share',
+    });
+    shareBtn.addEventListener('click', async () => {
+      const ok = await copyToClipboard(buildShareText(quiz.edition_number, score));
+      shareBtn.textContent = ok ? 'Copied to clipboard' : 'Copy failed, select the text manually';
+    });
+    panel.appendChild(el('div', { class: 'score-share' }, [shareBtn]));
+
+    return panel;
+  }
+
+  // Submission cannot be retried by scrolling again, so a failure needs its
+  // own way back. The reference has no failure state; this is ours.
+  function buildSubmitError() {
+    const retry = el('button', { type: 'button', class: 'endnote-back', text: 'Try again' });
+    retry.addEventListener('click', () => {
+      submitting = false;
+      submitFailed = false;
+      renderEnd();
+      submit();
+    });
+    return el('section', { class: 'endnote', role: 'alert' }, [
+      el('p', { class: 'label muted', text: "Editor's note" }),
+      el('p', {
+        class: 'endnote-text',
+        text: 'The score could not be sent. Check your connection.',
+      }),
+      retry,
+    ]);
+  }
+
+  let submitting = false;
+  let submitFailed = false;
+  let stopWatching = null;
+
+  function renderEnd() {
+    if (progress.completed) return;
+    if (submitFailed) {
+      endSlot.replaceChildren(buildSubmitError());
+      return;
+    }
+    if (markedCount() < TOTAL_QUESTIONS) {
+      endSlot.replaceChildren(buildIncompleteNote());
+      return;
+    }
+    // Every question is marked. The section is on the page, so scrolling to
+    // it is what submits.
+    endSlot.replaceChildren(el('section', { class: 'score bleed' }, [buildScoreHead()]));
+    if (!stopWatching && !submitting) {
+      stopWatching = whenInView(endSlot, () => {
+        stopWatching = null;
+        submit();
+      });
+    }
   }
 
   function complete(score, avgScore, completionCount) {
     progress.completed = { score, avg: avgScore, count: completionCount };
     persist();
     lockMarking();
-    tallyBar.remove();
-    document.body.classList.remove('has-tally');
-    renderFinalPanel(score, avgScore, completionCount);
-    finalPanelSlot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    endSlot.replaceChildren(buildScorePanel(score, avgScore, completionCount));
+    statusLine.textContent = 'Your score, ' + score + ' out of 16.';
   }
 
   async function submit() {
-    finishBtn.disabled = true;
-    tallyError.classList.add('hidden');
+    if (submitting || progress.completed) return;
+    if (markedCount() < TOTAL_QUESTIONS) return;
+    submitting = true;
 
     if (preview) {
       complete(correctCount(), null, 0);
@@ -297,9 +537,10 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
         complete(correctCount(), avg, count);
         return;
       }
-      finishBtn.disabled = false;
-      tallyError.textContent = 'Could not submit, check your connection and try again.';
-      tallyError.classList.remove('hidden');
+      submitting = false;
+      submitFailed = true;
+      renderEnd();
+      statusLine.textContent = 'The score could not be sent.';
       return;
     }
 
@@ -307,7 +548,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     complete(row.score, row.avg_score, Number(row.completion_count));
   }
 
-  finishBtn.addEventListener('click', submit);
+  // --- Questions --------------------------------------------------------
 
   function showStat(questionId, statNode) {
     getQuestionStats().then((map) => {
@@ -329,28 +570,32 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     ]);
     const answerRow = el('div', { class: 'answer-row hidden' }, [answer]);
     const revealBtn = el('button', {
+      type: 'button',
       class: 'reveal-btn',
       'aria-label': 'Reveal answer to question ' + q.sort_order,
-      text: 'Reveal answer',
+      text: 'Reveal answer ↓',
     });
     const revealRow = el('div', { class: 'reveal-row' }, [revealBtn]);
     const tick = el('button', {
+      type: 'button',
       class: 'mark-btn',
       'aria-label': 'Mark question ' + q.sort_order + ' correct',
       'aria-pressed': 'false',
     });
     tick.innerHTML = TICK_SVG;
     const cross = el('button', {
+      type: 'button',
       class: 'mark-btn',
       'aria-label': 'Mark question ' + q.sort_order + ' incorrect',
       'aria-pressed': 'false',
     });
     cross.innerHTML = CROSS_SVG;
     markButtons.push(tick, cross);
+    const stat = el('p', { class: 'stat mono hidden', 'aria-live': 'polite' });
     const marksRow = el('div', { class: 'marks-row hidden' }, [
       el('span', { class: 'marks' }, [tick, cross]),
+      stat,
     ]);
-    const stat = el('p', { class: 'stat mono hidden', 'aria-live': 'polite' });
 
     function reveal(save) {
       answerRow.classList.remove('hidden');
@@ -371,7 +616,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       if (save) {
         progress.marks[q.id] = correct;
         persist();
-        updateTally();
+        renderEnd();
       }
       showStat(q.id, stat);
     }
@@ -380,16 +625,19 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     tick.addEventListener('click', () => applyMark(true, true));
     cross.addEventListener('click', () => applyMark(false, true));
 
-    const node = el('div', { class: 'question' }, [
-      el('p', { class: 'question-text' }, [
-        el('span', { class: 'question-number', text: q.sort_order + '. ' }),
-        document.createTextNode(q.question_text),
-      ]),
-      revealRow,
-      answerRow,
-      marksRow,
-      stat,
-    ]);
+    const node = el(
+      'div',
+      { class: 'question', id: 'question-' + q.id, tabindex: '-1' },
+      [
+        el('span', { class: 'question-number mono', text: pad2(q.sort_order) }),
+        el('div', { class: 'question-body' }, [
+          el('p', { class: 'question-text', text: q.question_text }),
+          revealRow,
+          answerRow,
+          marksRow,
+        ]),
+      ]
+    );
 
     // Restore state.
     if (isCompleted || progress.revealed[q.id]) reveal(false);
@@ -401,16 +649,31 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     return node;
   }
 
-  // Questions grouped under category headings. Rules between blocks come
-  // from CSS borders so the rhythm stays consistent.
-  for (const category of categories) {
-    frag.appendChild(el('h2', { class: 'category-heading', text: category.name }));
-    for (const q of questionsByCategory.get(category.id) || []) {
-      frag.appendChild(buildQuestion(q));
-    }
-  }
+  // Each category opens with a banded header. The category is named once,
+  // there, and not repeated above every question.
+  categories.forEach((category, index) => {
+    const catQuestions = questionsByCategory.get(category.id) || [];
+    const first = catQuestions[0];
+    const last = catQuestions[catQuestions.length - 1];
+    const range = first && last ? pad2(first.sort_order) + '–' + pad2(last.sort_order) : '';
 
-  frag.appendChild(finalPanelSlot);
+    const section = el('section', { class: 'category' }, [
+      el('header', { class: 'category-header bleed' }, [
+        el('div', { class: 'category-meta mono' }, [
+          el('span', {
+            text: 'Category ' + pad2(index + 1) + ' of ' + pad2(categories.length),
+          }),
+          el('span', { text: range ? 'Q' + range : '' }),
+        ]),
+        el('h2', { class: 'category-name', text: category.name }),
+      ]),
+    ]);
+    for (const q of catQuestions) section.appendChild(buildQuestion(q));
+    frag.appendChild(section);
+  });
+
+  frag.appendChild(endSlot);
+  frag.appendChild(statusLine);
 
   root.replaceChildren(frag);
 
@@ -421,10 +684,10 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     const freshCount = quizStats
       ? Number(quizStats.completion_count)
       : progress.completed.count || 0;
-    renderFinalPanel(progress.completed.score, freshAvg, freshCount);
+    endSlot.replaceChildren(
+      buildScorePanel(progress.completed.score, freshAvg, freshCount)
+    );
   } else {
-    document.body.appendChild(tallyBar);
-    document.body.classList.add('has-tally');
-    updateTally();
+    renderEnd();
   }
 }

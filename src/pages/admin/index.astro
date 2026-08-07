@@ -3,16 +3,17 @@
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Admin" noIndex={true}>
+<Base title="The Quizz, Admin" noIndex={true} bodyClass="admin">
   <div id="admin-app"></div>
 </Base>
 
 <script>
   import { supabase } from '../../lib/supabase.js';
-  import { el } from '../../lib/quiz-render.js';
+  import { el, pad2 } from '../../lib/quiz-render.js';
   import {
     requireAdmin,
     adminNav,
+    statusChip,
     nextSaturdaySydney6am,
     formatSydney,
   } from '../../lib/admin.js';
@@ -65,47 +66,84 @@ import Base from '../../layouts/Base.astro';
     }
   }
 
+  function actionLink(href, text) {
+    return el('a', { class: 'btn btn-small', href, text });
+  }
+
+  function buildRow(quiz, isLast) {
+    // A title is optional on most editions. Without one the row is named by
+    // its number alone, and the title cell says so quietly.
+    const titled = Boolean(quiz.title);
+    return el('div', { class: 'admin-row' + (isLast ? ' is-last' : '') }, [
+      el('span', { class: 'admin-row-number mono', text: pad2(quiz.edition_number) }),
+      el('h2', { class: 'admin-row-title' + (titled ? '' : ' is-untitled') }, [
+        el('a', {
+          href: '/admin/edit?id=' + quiz.id,
+          text: titled ? quiz.title : 'Untitled',
+        }),
+      ]),
+      statusChip(quiz.status),
+      el('p', { class: 'admin-row-date mono', text: formatSydney(quiz.publish_at) }),
+      el('div', { class: 'admin-row-actions' }, [
+        actionLink('/admin/edit?id=' + quiz.id, 'Edit'),
+        actionLink('/admin/preview?id=' + quiz.id, 'Preview'),
+        actionLink('/admin/analytics?id=' + quiz.id, 'Analytics'),
+      ]),
+    ]);
+  }
+
+  function buildEmpty(onCreate) {
+    const write = el('button', { type: 'button', class: 'btn-primary', text: 'Write edition 01' });
+    write.addEventListener('click', onCreate);
+    return el('div', { class: 'admin-empty bleed' }, [
+      el('p', { class: 'label muted', text: 'No quizzes yet' }),
+      el('p', {
+        class: 'admin-empty-text',
+        text:
+          'Nothing has been written yet. The first edition will be No. 01, and it publishes ' +
+          'the Saturday morning after it is scheduled.',
+      }),
+      write,
+    ]);
+  }
+
   async function renderDashboard() {
     const { data: quizzes, error } = await supabase
       .from('quizzes')
       .select('id, edition_number, title, status, publish_at')
       .order('edition_number', { ascending: false });
     if (error) {
-      root.replaceChildren(adminNav(), el('p', { text: 'Could not load quizzes.' }));
+      root.replaceChildren(adminNav('dashboard'), el('p', { class: 'load-error', text: 'Could not load quizzes.' }));
       return;
     }
 
-    const newBtn = el('button', { text: 'New quiz' });
+    const newBtn = el('button', { type: 'button', class: 'btn-primary', text: 'New quiz' });
     const errorLine = el('p', { class: 'mono form-error hidden', role: 'alert' });
-    newBtn.addEventListener('click', () => createQuiz(quizzes, newBtn, errorLine));
+    const create = () => createQuiz(quizzes, newBtn, errorLine);
+    newBtn.addEventListener('click', create);
 
-    const rows = quizzes.map((quiz) =>
-      el('article', { class: 'admin-row' }, [
-        el('h2', {}, [
-          el('a', {
-            href: '/admin/edit?id=' + quiz.id,
-            text:
-              'Edition ' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : ''),
-          }),
-        ]),
-        el('p', {
-          class: 'mono',
-          text: quiz.status + ', ' + formatSydney(quiz.publish_at),
-        }),
-        el('p', { class: 'admin-actions mono' }, [
-          el('a', { href: '/admin/edit?id=' + quiz.id, text: 'Edit' }),
-          el('a', { href: '/admin/preview?id=' + quiz.id, text: 'Preview' }),
-          el('a', { href: '/admin/analytics?id=' + quiz.id, text: 'Analytics' }),
-        ]),
-      ])
-    );
-
-    root.replaceChildren(
-      adminNav(),
+    const parts = [
+      adminNav('dashboard'),
       el('div', { class: 'admin-head' }, [el('h1', { text: 'Quizzes' }), newBtn]),
       errorLine,
-      ...(rows.length > 0 ? rows : [el('p', { text: 'No quizzes yet.' })])
-    );
+    ];
+
+    if (quizzes.length > 0) {
+      parts.push(
+        el('div', { class: 'admin-table-head mono bleed' }, [
+          el('span', { text: 'No.' }),
+          el('span', { text: 'Title' }),
+          el('span', { text: 'Status' }),
+        ]),
+        ...quizzes.map((quiz, index) => buildRow(quiz, index === quizzes.length - 1))
+      );
+    } else {
+      parts.push(buildEmpty(create));
+    }
+
+    parts.push(el('p', { class: 'admin-note mono', text: 'All times Sydney' }));
+
+    root.replaceChildren(...parts);
   }
 
   (async () => {

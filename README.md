@@ -45,6 +45,53 @@ Never put the secret key (`sb_secret_...`) in this repo, in `.env`, or in Cloudf
 
 After changing the production domain, update `site` in `astro.config.mjs` so canonical URLs and Open Graph tags point at the right host.
 
+## Styling
+
+One stylesheet, split by role rather than by page. `src/styles/global.css` is the only entry point and is imported once, by `src/layouts/Base.astro`. It does nothing but `@import` the five parts, in this order, which is also the cascade order:
+
+| File | Holds |
+| --- | --- |
+| `tokens.css` | The `:root` block, and nothing else. Colours, fonts, the type scale, tracking, leading, spacing, rules, column widths. |
+| `base.css` | `@font-face`, reset, the ground, base typography, links, focus. |
+| `components.css` | Pieces used on more than one page: buttons, fields, marks, bars, the top bar and menu, the footer. |
+| `pages.css` | Layout for home, quiz, archive and About. |
+| `admin.css` | Layout for `/admin`. |
+
+There is no Tailwind, no CSS modules, and no component-scoped styles. Astro's scoped styles cannot work here: most markup is built at runtime by the `el()` helper in `src/lib/quiz-render.js` and `src/lib/admin.js`, and never receives Astro's scoping attribute.
+
+### The tokens are the contract
+
+Nothing outside `tokens.css` declares a raw colour, a raw font size, or a raw border. If a value is needed that is not there, add a token; do not hardcode it at the call site. The four layout files are checked against this and are clean.
+
+### The rule system
+
+Every divider on the site is one of three tiers, and each tier means one thing. Using the wrong one is how a design like this comes apart.
+
+| Token | Drawn as | Means |
+| --- | --- | --- |
+| `--rule-zone` | 3px double | A boundary between parts of the page that differ in kind: masthead to dateline, questions to score. |
+| `--rule-section` | 1px solid | A boundary between sections of the same kind. |
+| `--rule-item` | 1px solid, 28% ink | A separator between rows of one list. |
+
+A fourth, `--rule-component`, is drawn like the section rule but means an edge rather than a division: buttons, mark cells, the bar track. It is named separately so a change to the section rule does not silently redraw every button. `--rule-section-inverse` is the section rule on the ink ground of the admin bar.
+
+Two consequences worth knowing before you edit anything:
+
+- The last item in a list drops its rule (`:last-child`), so nothing stacks against the section rule that opens whatever comes next.
+- A struck-through archive row is drawn with `--rule-item` as a positioned bar, not `text-decoration: line-through`, so its weight matches every other hairline on the page.
+
+### Type
+
+Three families, three jobs, no overlap. The display serif (Bodoni Moda) sets mastheads, category names and large numerals, and never sets a paragraph. The reading serif (Source Serif 4) sets questions, answers and body copy. The monospace (DM Mono) sets every label, number strip and utility control. In the admin the display serif is held back to page titles only.
+
+Each family has its own scale in `tokens.css`: `--fs-label-*` for mono, `--fs-read-*` for the reading serif, `--fs-display-*` for the display serif. The design depends on the distance between the ends of that ladder, so the steps are deliberately far apart.
+
+### Fonts
+
+Self-hosted from `public/fonts`, so the site makes no third-party request and sets no third-party cookie. Static instances rather than variable ones, because only one weight of each family is used and no optical-size variation: 74.2 KB across six files, of which the three latin subsets (42.9 KB) are preloaded in `Base.astro` and the three latin-ext subsets load on demand.
+
+Each family is backed by a metric-matched local fallback declared in `base.css`. The `size-adjust`, `ascent-override` and `descent-override` values were computed from the real font metrics against Georgia and Courier New, so the page does not reflow when the webfonts land. If you change a family, recompute them.
+
 ## Database
 
 The schema, functions, RLS policies, and grants live in `supabase/migrations/` and are already applied to the project. `supabase/seed.sql` documents the sample data (edition 1).

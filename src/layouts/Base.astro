@@ -5,12 +5,16 @@ interface Props {
   title?: string;
   description?: string;
   noIndex?: boolean;
+  // Widens the reading column. The quiz and About read at a newspaper
+  // column; the archive and the admin are lists and forms and take more.
+  bodyClass?: string;
 }
 
 const {
   title = 'The Quizz',
   description = 'A weekly quiz of 16 questions across 4 categories, published every Saturday.',
   noIndex = false,
+  bodyClass = undefined,
 } = Astro.props;
 
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
@@ -25,6 +29,29 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     {canonical && <link rel="canonical" href={canonical} />}
     {noIndex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {/* Self-hosted fonts, so the page makes no third-party request. Only the
+        latin subsets are preloaded; latin-ext loads on demand. */}
+    <link
+      rel="preload"
+      href="/fonts/bodoni-moda-500-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/source-serif-4-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/dm-mono-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <meta property="og:site_name" content="The Quizz" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -36,7 +63,7 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     <meta name="twitter:card" content="summary_large_image" />
     <slot name="head" />
   </head>
-  <body>
+  <body class={bodyClass}>
     <slot />
     <!--
       Cloudflare Web Analytics.

@@ -6,16 +6,18 @@
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Editor" noIndex={true}>
+<Base title="The Quizz, Editor" noIndex={true} bodyClass="editor">
   <div id="admin-app"></div>
 </Base>
 
 <script>
   import { supabase } from '../../lib/supabase.js';
-  import { el } from '../../lib/quiz-render.js';
+  import { el, pad2 } from '../../lib/quiz-render.js';
   import {
     requireAdmin,
     adminNav,
+    field,
+    statusChip,
     fetchQuizById,
     sydneyInputValue,
     parseSydneyInput,
@@ -27,9 +29,14 @@ import Base from '../../layouts/Base.astro';
     const categories = [...quiz.categories].sort((a, b) => a.sort_order - b.sort_order);
     const questions = [...quiz.questions].sort((a, b) => a.sort_order - b.sort_order);
 
-    const titleInput = el('input', { type: 'text', value: quiz.title || '' });
+    const titleInput = el('input', {
+      type: 'text',
+      value: quiz.title || '',
+      placeholder: 'Left blank on most editions',
+    });
     const publishInput = el('input', {
       type: 'datetime-local',
+      class: 'field-mono',
       value: sydneyInputValue(quiz.publish_at),
     });
 
@@ -37,34 +44,61 @@ import Base from '../../layouts/Base.astro';
     const questionInputs = new Map();
 
     const categoryBlocks = categories.map((category, index) => {
-      const nameInput = el('input', { type: 'text', value: category.name });
+      const nameInput = el('input', {
+        type: 'text',
+        value: category.name,
+        placeholder: 'e.g. Add One Letter',
+      });
       categoryInputs.set(category.id, nameInput);
-      const questionFields = questions
-        .filter((q) => q.category_id === category.id)
-        .map((q) => {
-          const questionArea = el('textarea', { rows: '2' });
-          questionArea.value = q.question_text;
-          const answerInput = el('input', { type: 'text', value: q.answer_text });
-          questionInputs.set(q.id, { question: questionArea, answer: answerInput });
-          return el('div', { class: 'editor-question' }, [
-            el('p', { class: 'label', text: 'Question ' + q.sort_order }),
-            questionArea,
-            el('p', { class: 'label', text: 'Answer ' + q.sort_order }),
-            answerInput,
-          ]);
+
+      const catQuestions = questions.filter((q) => q.category_id === category.id);
+      const first = catQuestions[0];
+      const last = catQuestions[catQuestions.length - 1];
+      const range = first && last ? pad2(first.sort_order) + '–' + pad2(last.sort_order) : '';
+
+      const questionFields = catQuestions.map((q) => {
+        const questionArea = el('textarea', {
+          rows: '2',
+          placeholder: 'Write the question in full',
         });
+        questionArea.value = q.question_text;
+        const answerInput = el('input', {
+          type: 'text',
+          value: q.answer_text,
+          placeholder: 'Short answer as printed',
+        });
+        questionInputs.set(q.id, { question: questionArea, answer: answerInput });
+        return el('div', { class: 'editor-question' }, [
+          el('span', { class: 'editor-question-number mono', text: pad2(q.sort_order) }),
+          el('div', { class: 'editor-question-body' }, [
+            field('Question', questionArea),
+            field('Answer', answerInput),
+          ]),
+        ]);
+      });
+
+      // The band stays in view while its four questions scroll past, so it
+      // is always clear which category is being written.
       return el('section', { class: 'editor-category' }, [
-        el('p', { class: 'label', text: 'Category ' + (index + 1) }),
-        nameInput,
+        el('header', { class: 'editor-category-head mono bleed' }, [
+          el('span', { text: 'Category ' + pad2(index + 1) }),
+          el('span', { class: 'muted', text: range ? 'Q' + range : '' }),
+        ]),
+        field('Category name', nameInput, 'editor-category-name'),
         ...questionFields,
       ]);
     });
 
-    const statusLine = el('p', { class: 'mono editor-status', 'aria-live': 'polite' });
+    const statusLine = el('p', { class: 'mono editor-status hidden', 'aria-live': 'polite' });
     const issuesBox = el('div', { class: 'editor-issues hidden', role: 'alert' });
-    const saveBtn = el('button', { text: 'Save' });
-    const scheduleBtn = el('button', { text: 'Schedule' });
+    const saveBtn = el('button', { type: 'button', class: 'btn-primary', text: 'Save' });
+    const scheduleBtn = el('button', { type: 'button', text: 'Schedule' });
     const isDraft = quiz.status === 'draft';
+
+    function setStatus(message) {
+      statusLine.textContent = message;
+      statusLine.classList.toggle('hidden', !message);
+    }
 
     function collect() {
       return {
@@ -87,22 +121,56 @@ import Base from '../../layouts/Base.astro';
       };
     }
 
+    // Names exactly which fields are missing, and carries the field itself
+    // so the list can take you to it.
     function completenessIssues(data) {
       const issues = [];
       data.categories.forEach((c, i) => {
-        if (!c.name) issues.push('Category ' + (i + 1) + ' name');
+        if (!c.name) {
+          issues.push({ label: 'Category ' + (i + 1) + ' name', input: categoryInputs.get(c.id) });
+        }
       });
       data.questions.forEach((q) => {
-        if (!q.question_text) issues.push('Question ' + q.sort_order + ' text');
-        if (!q.answer_text) issues.push('Question ' + q.sort_order + ' answer');
+        const inputs = questionInputs.get(q.id);
+        if (!q.question_text) {
+          issues.push({ label: 'Question ' + q.sort_order + ' text', input: inputs.question });
+        }
+        if (!q.answer_text) {
+          issues.push({ label: 'Question ' + q.sort_order + ' answer', input: inputs.answer });
+        }
       });
       return issues;
+    }
+
+    function showIssues(issues) {
+      const rows = issues.map((issue, index) => {
+        const go = el('button', { type: 'button', class: 'issue-go', text: 'Go →' });
+        go.addEventListener('click', () => {
+          issue.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          issue.input.focus({ preventScroll: true });
+        });
+        return el(
+          'div',
+          { class: 'issue-row' + (index === issues.length - 1 ? ' is-last' : '') },
+          [el('span', { class: 'issue-label', text: issue.label }), go]
+        );
+      });
+      issuesBox.replaceChildren(
+        el('p', {
+          class: 'label issue-head',
+          text:
+            'Cannot schedule. ' +
+            (issues.length === 1 ? '1 field missing' : issues.length + ' fields missing'),
+        }),
+        el('div', { class: 'issue-list' }, rows)
+      );
+      issuesBox.classList.remove('hidden');
     }
 
     async function save() {
       const data = collect();
       if (!data.publishAt) {
-        statusLine.textContent = 'Publish time is invalid.';
+        setStatus('Publish time is invalid.');
         return false;
       }
       const { error: quizError } = await supabase
@@ -110,17 +178,17 @@ import Base from '../../layouts/Base.astro';
         .update({ title: data.title, publish_at: data.publishAt.toISOString() })
         .eq('id', quiz.id);
       if (quizError) {
-        statusLine.textContent = 'Save failed: ' + quizError.message;
+        setStatus('Save failed: ' + quizError.message);
         return false;
       }
       const { error: catError } = await supabase.from('categories').upsert(data.categories);
       if (catError) {
-        statusLine.textContent = 'Save failed: ' + catError.message;
+        setStatus('Save failed: ' + catError.message);
         return false;
       }
       const { error: qError } = await supabase.from('questions').upsert(data.questions);
       if (qError) {
-        statusLine.textContent = 'Save failed: ' + qError.message;
+        setStatus('Save failed: ' + qError.message);
         return false;
       }
       return true;
@@ -129,32 +197,24 @@ import Base from '../../layouts/Base.astro';
     saveBtn.addEventListener('click', async () => {
       saveBtn.disabled = true;
       issuesBox.classList.add('hidden');
-      statusLine.textContent = 'Saving.';
+      setStatus('Saving.');
       const ok = await save();
-      if (ok) statusLine.textContent = 'Saved.';
+      if (ok) setStatus('Saved, all changes stored.');
       saveBtn.disabled = false;
     });
 
     scheduleBtn.addEventListener('click', async () => {
       scheduleBtn.disabled = true;
-      statusLine.textContent = '';
+      setStatus('');
       const data = collect();
       const issues = completenessIssues(data);
       if (issues.length > 0) {
-        issuesBox.replaceChildren(
-          el('p', { class: 'mono', text: 'Cannot schedule. Missing:' }),
-          el(
-            'ul',
-            {},
-            issues.map((issue) => el('li', { text: issue }))
-          )
-        );
-        issuesBox.classList.remove('hidden');
+        showIssues(issues);
         scheduleBtn.disabled = false;
         return;
       }
       issuesBox.classList.add('hidden');
-      statusLine.textContent = 'Saving.';
+      setStatus('Saving.');
       const saved = await save();
       if (!saved) {
         scheduleBtn.disabled = false;
@@ -165,31 +225,33 @@ import Base from '../../layouts/Base.astro';
         .update({ status: 'scheduled' })
         .eq('id', quiz.id);
       if (error) {
-        statusLine.textContent = 'Schedule failed: ' + error.message;
+        setStatus('Schedule failed: ' + error.message);
         scheduleBtn.disabled = false;
         return;
       }
-      statusLine.textContent = 'Scheduled.';
+      setStatus('Scheduled.');
       quiz.status = 'scheduled';
-      statusValue.textContent = quiz.status;
+      const nextChip = statusChip(quiz.status);
+      headChip.replaceWith(nextChip);
+      headChip = nextChip;
       scheduleBtn.remove();
     });
 
-    const statusValue = el('td', { text: quiz.status });
+    let headChip = statusChip(quiz.status);
 
     // Draft-only deletion with an inline confirmation step. Scheduled and
     // published quizzes get no delete control.
-    const deleteBtn = el('button', { class: 'danger-btn', text: 'Delete draft' });
-    const deleteConfirm = el('div', { class: 'editor-issues hidden' }, []);
+    const deleteBtn = el('button', { type: 'button', class: 'danger-btn', text: 'Delete draft' });
+    const deleteConfirm = el('div', { class: 'editor-confirm hidden' }, []);
     deleteBtn.addEventListener('click', () => {
-      const confirmBtn = el('button', { text: 'Delete' });
-      const cancelBtn = el('button', { text: 'Cancel' });
+      const confirmBtn = el('button', { type: 'button', class: 'danger-btn', text: 'Delete permanently' });
+      const cancelBtn = el('button', { type: 'button', text: 'Keep draft' });
       confirmBtn.addEventListener('click', async () => {
         confirmBtn.disabled = true;
         cancelBtn.disabled = true;
         const { error } = await supabase.from('quizzes').delete().eq('id', quiz.id);
         if (error) {
-          statusLine.textContent = 'Delete failed: ' + error.message;
+          setStatus('Delete failed: ' + error.message);
           confirmBtn.disabled = false;
           cancelBtn.disabled = false;
           return;
@@ -199,51 +261,49 @@ import Base from '../../layouts/Base.astro';
       cancelBtn.addEventListener('click', () => {
         deleteConfirm.classList.add('hidden');
         deleteBtn.disabled = false;
+        deleteBtn.focus();
       });
       deleteConfirm.replaceChildren(
         el('p', {
-          text:
-            'Delete draft edition ' + quiz.edition_number + '? This cannot be undone.',
+          class: 'editor-confirm-text',
+          text: 'Delete draft edition ' + quiz.edition_number + '? This cannot be undone.',
         }),
-        el('div', { class: 'editor-actions confirm-actions' }, [confirmBtn, cancelBtn])
+        el('div', { class: 'editor-confirm-actions' }, [confirmBtn, cancelBtn])
       );
       deleteConfirm.classList.remove('hidden');
       deleteBtn.disabled = true;
+      confirmBtn.focus();
     });
 
     root.replaceChildren(
       adminNav(),
-      el('h1', { text: 'Edition ' + quiz.edition_number }),
-      el('table', { class: 'meta-table editor-meta' }, [
-        el('tbody', {}, [
-          el('tr', {}, [el('th', { scope: 'row', text: 'Status' }), statusValue]),
-          el('tr', {}, [
-            el('th', { scope: 'row', text: 'Publish' }),
-            el('td', {}, [
-              publishInput,
-              el('span', { class: 'mono editor-tz', text: 'Sydney time' }),
-            ]),
-          ]),
-          el('tr', {}, [
-            el('th', { scope: 'row', text: 'Title' }),
-            el('td', {}, [titleInput]),
-          ]),
+      el('div', { class: 'admin-head' }, [
+        el('h1', { text: 'Edition ' + pad2(quiz.edition_number) }),
+        headChip,
+      ]),
+      issuesBox,
+      el('section', { class: 'editor-meta' }, [
+        el('p', { class: 'label muted', text: 'Edition details' }),
+        el('div', { class: 'field-grid' }, [
+          field('Publish, Sydney time', publishInput),
+          field('Title, optional', titleInput),
         ]),
       ]),
       ...categoryBlocks,
-      el('div', { class: 'editor-actions' }, [
-        saveBtn,
-        ...(isDraft ? [scheduleBtn] : []),
-        el('a', {
-          class: 'btn',
-          href: '/admin/preview?id=' + quiz.id,
-          text: 'Preview',
-        }),
-        ...(isDraft ? [deleteBtn] : []),
-      ]),
-      deleteConfirm,
-      issuesBox,
-      statusLine
+      el('div', { class: 'editor-foot' }, [
+        statusLine,
+        deleteConfirm,
+        el('div', { class: 'editor-actions' }, [
+          saveBtn,
+          ...(isDraft ? [scheduleBtn] : []),
+          el('a', {
+            class: 'btn',
+            href: '/admin/preview?id=' + quiz.id,
+            text: 'Preview',
+          }),
+          ...(isDraft ? [deleteBtn] : []),
+        ]),
+      ])
     );
   }
 
@@ -253,19 +313,22 @@ import Base from '../../layouts/Base.astro';
     if (!session) return;
     const id = new URLSearchParams(location.search).get('id');
     if (!id) {
-      root.replaceChildren(adminNav(), el('p', { text: 'No quiz id given.' }));
+      root.replaceChildren(adminNav(), el('p', { class: 'load-error', text: 'No quiz id given.' }));
       return;
     }
     try {
       const quiz = await fetchQuizById(id);
       if (!quiz) {
-        root.replaceChildren(adminNav(), el('p', { text: 'Quiz not found.' }));
+        root.replaceChildren(adminNav(), el('p', { class: 'load-error', text: 'Quiz not found.' }));
         return;
       }
       renderEditor(quiz);
     } catch (err) {
       console.error('[quizz admin]', err);
-      root.replaceChildren(adminNav(), el('p', { text: 'Could not load the quiz.' }));
+      root.replaceChildren(
+        adminNav(),
+        el('p', { class: 'load-error', text: 'Could not load the quiz.' })
+      );
     }
   })();
 </script>

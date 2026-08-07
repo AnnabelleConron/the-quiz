@@ -1,0 +1,34 @@
+---
+// About: one page, one paragraph. Nothing here depends on the database,
+// so it is served as static HTML and makes no request at all.
+import Base from '../layouts/Base.astro';
+import SiteTop from '../components/SiteTop.astro';
+
+const description =
+  'The Quizz is written by hand and published every Saturday morning. Four categories, sixteen questions.';
+---
+
+<Base title="The Quizz, About" description={description}>
+  <SiteTop current="about" />
+  <main>
+    <div class="masthead masthead-about">
+      <p class="label masthead-kicker">The Quizz</p>
+      <h1 class="masthead-title">About</h1>
+    </div>
+
+    <section class="about">
+      <h2 class="about-title">One quiz, once a week</h2>
+      <p class="about-text">
+        The Quizz is written by hand and published every Saturday morning. Four categories,
+        sixteen questions, meant to be played out loud with one phone passed around a table. The
+        questions are set to be argued over rather than looked up, and the answers print upside
+        down at the foot of each one, the way they do in a newspaper. There are no accounts and
+        nothing to install; whatever you mark is kept on your own device.
+      </p>
+    </section>
+
+    <footer class="site-footer">
+      <p class="label muted">A new quiz every Saturday</p>
+    </footer>
+  </main>
+</Base>

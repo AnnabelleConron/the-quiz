@@ -1,0 +1,189 @@
+/* The Quizz, design tokens.
+
+   This file is the contract. Nothing outside it declares a raw colour, a raw
+   font size, or a raw border. If a value is needed that is not here, the fix
+   is to add a token, not to hardcode it at the call site.
+
+   Derived from design_reference/The_Quizz_Style_Ref/. */
+
+:root {
+  /* --- Ground and ink ------------------------------------------------- */
+
+  /* The paper. A warm-cool grey stock, not white. */
+  --paper: #e6e8e5;
+  --ink: #16181a;
+
+  /* The design's grey. Secondary text, datelines, labels, spent states. */
+  --grey: #6e7370;
+
+  /* The single accent. Links on hover, the focus ring, error states, and
+     the one red label in a section header. Never used as a fill for text
+     that has to be read at length. */
+  --accent: #b32718;
+
+  /* Ink-ground inversions, used by the admin bar and pressed buttons. */
+  --paper-on-ink: #e6e8e5;
+  --grey-on-ink: #9aa09c;
+
+  /* Banded fills. The wash marks a zone as set apart (section headers, the
+     score panel). The strong wash is the admin's sticky category band, which
+     sits over scrolling content and needs to be opaque. */
+  --wash: rgba(22, 24, 26, 0.045);
+  --wash-strong: #dee0dd;
+
+  /* Form fields. A wash of white over the ground, not white, so a form does
+     not punch holes in the page. */
+  --field: rgba(255, 255, 255, 0.34);
+  --field-focus: rgba(255, 255, 255, 0.62);
+  --field-error: rgba(179, 39, 24, 0.05);
+
+  /* The faint rule's colour, needed on its own for bars, strikes and
+     one-sided dividers that cannot use the shorthand tokens below. */
+  --rule-faint: rgba(22, 24, 26, 0.28);
+
+  /* A line that runs off the right edge rather than wrapping or clipping
+     hard. The colours here are mask opacity, not palette. */
+  --mask-fade-right: linear-gradient(to right, #000 calc(100% - 46px), transparent 100%);
+
+  /* Press texture. Keeps the flat ground from reading as a screen. */
+  --ground-texture: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22 opacity=%220.09%22/%3E%3C/svg%3E');
+
+  /* --- Links and focus ------------------------------------------------ */
+
+  /* Links are set in ink and carry no underline; the accent is the hover
+     and focus signal. This replaces the old --link: #0000ee, which was the
+     browser default blue from the first direction and is not in this
+     palette. The accent measures 5.3:1 on the ground, so it clears AA for
+     text and the 3:1 minimum for a focus indicator. */
+  --link: var(--ink);
+  --link-hover: var(--accent);
+  --focus: var(--accent);
+
+  /* --- Rules ----------------------------------------------------------
+
+     Three tiers, one meaning each. Every divider on the site is one of
+     these three and nothing else.
+
+       zone     a boundary between parts of the page that are different in
+                kind: masthead to dateline, questions to score.
+       section  a boundary between sections of the same kind.
+       item     a separator between rows of one list.
+
+     A fourth token covers closed shapes (buttons, mark cells, the bar
+     track). It is drawn like the section rule but means something else:
+     an edge, not a division. Keeping it named separately means a change to
+     the section rule does not silently redraw every button. */
+
+  --rule-zone: 3px double var(--ink);
+  --rule-section: 1px solid var(--ink);
+  --rule-item: 1px solid var(--rule-faint);
+  --rule-component: 1px solid var(--ink);
+
+  /* The same section rule drawn on the ink ground of the admin bar. */
+  --rule-section-inverse: 1px solid var(--paper-on-ink);
+
+  /* --- Type -----------------------------------------------------------
+
+     Three families, three jobs, no overlap.
+
+       display  high-contrast serif. Mastheads, category names, large
+                numerals. Never sets a paragraph.
+       read     reading serif. Questions, answers, body copy.
+       mono     wide-tracked monospace. Every label, number strip and
+                utility control on the site.
+
+     The fallbacks are metric-matched faces declared in base.css, so the
+     page does not reflow when the webfonts land. */
+
+  --font-display: 'Bodoni Moda', 'Quizz Display Fallback', Didot, 'Bodoni MT', Georgia, serif;
+  --font-read: 'Source Serif 4', 'Quizz Read Fallback', Georgia, 'Times New Roman', serif;
+  --font-mono: 'DM Mono', 'Quizz Mono Fallback', ui-monospace, Menlo, 'Courier New', monospace;
+
+  /* The display face ships at 500 only. Nothing on the site is bold. */
+  --weight-display: 500;
+
+  /* Utility scale, monospace. Four steps, all uppercase, all tracked out. */
+  --fs-label-sm: 0.53rem; /* 8.5px  the workhorse label */
+  --fs-label: 0.5625rem; /* 9px    buttons, row numbers */
+  --fs-label-lg: 0.625rem; /* 10px   the site name in the top bar */
+  --fs-label-data: 0.8125rem; /* 13px   mono data values, mono fields */
+
+  /* Reading scale, body serif. */
+  --fs-read-xs: 0.97rem; /* 15.5px dense list rows */
+  --fs-read-sm: 1.03rem; /* 16.5px admin rows, form fields */
+  --fs-read: 1.09rem; /* 17.5px body copy */
+  --fs-read-lg: 1.19rem; /* 19px   question text, lead paragraphs */
+  --fs-read-xl: 1.31rem; /* 21px   the About page at width */
+
+  /* Display scale. The design lives on the distance between the ends of
+     this ladder, so the steps are deliberately far apart. */
+  --fs-display-xs: 1.3125rem; /* 21px   the upside-down answer */
+  --fs-display-sm: 1.5rem; /* 24px   score denominators */
+  --fs-display-md: 1.875rem; /* 30px   stat numerals, archive edition numbers */
+  --fs-display-lg: 2.25rem; /* 36px   category names */
+  --fs-display-xl: 2.625rem; /* 42px   menu entries, home section headings */
+  --fs-display-2xl: 2.875rem; /* 46px   admin page titles */
+  --fs-display-3xl: 3.875rem; /* 62px   page mastheads */
+  --fs-display-4xl: 5.75rem; /* 92px   the home masthead, the played score */
+  --fs-display-5xl: 8.25rem; /* 132px  the final score */
+
+  /* Mastheads grow with the viewport between two rungs of the ladder. */
+  --fs-masthead: clamp(var(--fs-display-3xl), 14vw, var(--fs-display-4xl));
+
+  /* Tracking. Mono is tracked out, display is tracked in. */
+  --track-numeral: 0.08em;
+  --track-label: 0.2em;
+  --track-label-wide: 0.26em;
+  --track-label-widest: 0.32em;
+  --track-display: -0.02em;
+  --track-display-tight: -0.04em;
+
+  /* Leading. */
+  --lh-numeral: 0.84;
+  --lh-masthead: 0.9;
+  --lh-display: 1;
+  --lh-tight: 1.2;
+  --lh-read: 1.4;
+  --lh-loose: 1.45;
+
+  /* --- Space ---------------------------------------------------------- */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Page gutter, wider from small-tablet width up. */
+  --gutter: 18px;
+
+  /* Column widths. The public pages read at a newspaper column; the
+     archive and the admin are lists and forms and take more. */
+  --measure-page: 640px;
+  --measure-wide: 900px;
+  --measure-admin: 980px;
+  --measure-editor: 860px;
+
+  /* The sticky bars. Named because anchor offsets depend on them. */
+  --bar-height: 46px;
+  --bar-height-admin: 44px;
+
+  /* Minimum tap target. */
+  --tap: 44px;
+
+  /* The mono number column that opens a list row: contents, questions, menu
+     entries. The admin and the archive set their own, denser or larger. */
+  --col-number: 26px;
+
+  /* Score and rate bars. */
+  --bar-thickness: 7px;
+}
+
+@media (min-width: 480px) {
+  :root {
+    --gutter: 24px;
+  }
+}

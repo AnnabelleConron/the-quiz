@@ -1,0 +1,563 @@
+/* Layout for /admin. Same publication, workshop rather than front page.
+
+   The admin shares the tokens and the rule system with the public pages
+   but holds the display face back to page titles. The editor is a form
+   twenty-one fields deep, used every week, and a masthead on every label
+   would make it slower to work in. Everything else is set in the reading
+   serif or in mono. */
+
+/* --- Admin top bar ----------------------------------------------------
+
+   A solid ink strip, so it is never mistaken for the reader's page. This
+   was .site-top on both sides until the two directions separated. */
+
+.admin-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  min-height: var(--bar-height-admin);
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+/* Narrow enough that the brand and the four links cannot share a line. The
+   bar wraps, so its height stops matching --bar-height-admin and the
+   sticky category band below it would be offset against the wrong number.
+   Below this width neither is pinned. */
+@media (max-width: 560px) {
+  .admin-top {
+    position: static;
+    padding-block: var(--space-2);
+  }
+
+  .editor-category-head {
+    top: 0;
+  }
+}
+
+.admin-top-brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.admin-top-name,
+.admin-top-tag {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-top-name {
+  font-size: var(--fs-label-lg);
+  letter-spacing: var(--track-label-wide);
+  color: var(--paper-on-ink);
+}
+
+.admin-top-tag {
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label-wide);
+  color: var(--grey-on-ink);
+}
+
+.admin-top-links {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.admin-top-links a,
+.admin-top-links button {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--grey-on-ink);
+  white-space: nowrap;
+}
+
+.admin-top-links button {
+  border: none;
+  background: transparent;
+  min-height: 0;
+  padding: 0;
+}
+
+.admin-top-links a:hover,
+.admin-top-links button:hover,
+.admin-top-links a:active,
+.admin-top-links button:active {
+  color: var(--paper-on-ink);
+  background: transparent;
+}
+
+/* The screen you are on, underlined rather than filled. */
+.admin-top-links a[aria-current='page'] {
+  color: var(--paper-on-ink);
+  border-bottom: var(--rule-section-inverse);
+  padding-bottom: 2px;
+}
+
+.admin-top :focus-visible {
+  outline-color: var(--paper-on-ink);
+}
+
+/* --- Page head --------------------------------------------------------
+
+   The one place the display face appears in the admin. */
+
+.admin-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-5) 0 var(--space-4);
+  border-bottom: var(--rule-zone);
+}
+
+.admin-head h1 {
+  font-size: var(--fs-display-2xl);
+  line-height: var(--lh-masthead);
+}
+
+.admin-head .status {
+  margin-bottom: var(--space-1);
+}
+
+.admin-note {
+  padding: var(--space-4) 0 var(--space-6);
+  color: var(--grey);
+}
+
+/* --- Login ------------------------------------------------------------ */
+
+.admin-login {
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.admin-login .admin-head {
+  border-bottom: var(--rule-zone);
+  margin-bottom: var(--space-5);
+}
+
+.admin-login-actions {
+  margin-top: var(--space-5);
+}
+
+.form-error {
+  margin-top: var(--space-3);
+  color: var(--accent);
+}
+
+/* --- Status chips -----------------------------------------------------
+
+   Published is filled, scheduled is edged, a draft is quiet. */
+
+.status {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+  padding: var(--space-1) var(--space-2);
+  border: var(--rule-component);
+  white-space: nowrap;
+}
+
+.status-published {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+.status-scheduled {
+  background: transparent;
+  color: var(--ink);
+}
+
+.status-draft {
+  background: transparent;
+  color: var(--grey);
+  border: var(--rule-item);
+}
+
+/* --- Dashboard --------------------------------------------------------
+
+   One row per edition: the number, its title, its status, when it goes
+   out, and the three places you can take it. */
+
+.admin-table-head {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: var(--space-1) var(--space-3);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--rule-section);
+  letter-spacing: var(--track-label-wide);
+  color: var(--grey);
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0 var(--space-4);
+  border-bottom: var(--rule-item);
+}
+
+.admin-row.is-last {
+  border-bottom: var(--rule-section);
+}
+
+.admin-row-number {
+  font-size: var(--fs-label-data);
+  letter-spacing: var(--track-numeral);
+}
+
+.admin-row-title {
+  font-family: var(--font-read);
+  font-weight: normal;
+  font-size: var(--fs-read-sm);
+  line-height: var(--lh-tight);
+  letter-spacing: normal;
+}
+
+.admin-row-title.is-untitled {
+  color: var(--grey);
+}
+
+.admin-row-title.is-untitled a {
+  color: var(--grey);
+}
+
+.admin-row-date {
+  grid-column: 2 / -1;
+  margin-top: var(--space-1);
+  color: var(--grey);
+}
+
+.admin-row-actions {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* Nothing written yet. A panel rather than a sentence, so the first
+   edition has somewhere to start from. */
+.admin-empty {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+  border-bottom: var(--rule-item);
+  background-color: var(--wash);
+}
+
+.admin-empty-text {
+  max-width: 42ch;
+  margin: var(--space-3) 0 var(--space-5);
+  font-size: var(--fs-read);
+  line-height: var(--lh-loose);
+}
+
+/* --- Fields -----------------------------------------------------------
+
+   The label wraps the control, so the two cannot come apart. */
+
+.field {
+  display: block;
+  margin-top: var(--space-4);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label-wide);
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0 var(--space-4);
+}
+
+/* --- Editor ----------------------------------------------------------- */
+
+.editor-meta {
+  padding: var(--space-5) 0 var(--space-5);
+  border-bottom: var(--rule-zone);
+}
+
+/* The category band stays in view while its four questions scroll past,
+   so it is always clear which one is being written. */
+.editor-category-head {
+  position: sticky;
+  top: var(--bar-height-admin);
+  z-index: 10;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  background-color: var(--wash-strong);
+  border-top: var(--rule-section);
+  border-bottom: var(--rule-section);
+  letter-spacing: var(--track-label-wide);
+  font-size: var(--fs-label);
+}
+
+.editor-category-name {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.editor-question {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 var(--space-5);
+  border-bottom: var(--rule-item);
+}
+
+.editor-question:last-child {
+  border-bottom: none;
+}
+
+.editor-question-number {
+  padding-top: var(--space-5);
+  letter-spacing: var(--track-numeral);
+  color: var(--grey);
+}
+
+.editor-question-body .field:first-child {
+  margin-top: 0;
+}
+
+/* --- Editor foot ------------------------------------------------------ */
+
+.editor-foot {
+  border-top: var(--rule-zone);
+  padding-bottom: var(--space-7);
+}
+
+.editor-status {
+  padding: var(--space-3) 0;
+  border-bottom: var(--rule-item);
+  color: var(--grey);
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+}
+
+.editor-actions .btn-primary {
+  flex: 1 1 180px;
+}
+
+/* The delete confirmation is drawn with the zone rule: it is the one place
+   in the admin where a boundary means stop. */
+.editor-confirm {
+  margin-top: var(--space-5);
+  border: var(--rule-zone);
+  background-color: var(--wash);
+  padding: var(--space-4);
+}
+
+.editor-confirm-text {
+  font-size: var(--fs-read-sm);
+}
+
+.editor-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.danger-btn {
+  margin-left: auto;
+  border: var(--rule-zone);
+  color: var(--grey);
+}
+
+.editor-confirm-actions .danger-btn {
+  margin-left: 0;
+  color: var(--ink);
+}
+
+.danger-btn:hover,
+.danger-btn:active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+/* --- Completeness check -----------------------------------------------
+
+   Names exactly which fields are missing, and takes you to each one. */
+
+.editor-issues {
+  margin-top: var(--space-5);
+  border: var(--rule-component);
+  background-color: var(--wash);
+}
+
+.issue-head {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--rule-item);
+  letter-spacing: var(--track-label-wide);
+  color: var(--accent);
+}
+
+.issue-list {
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.issue-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: var(--rule-item);
+}
+
+.issue-row.is-last {
+  border-bottom: none;
+}
+
+.issue-label {
+  font-size: var(--fs-read-sm);
+  line-height: var(--lh-tight);
+}
+
+.issue-go {
+  border: none;
+  padding: 0;
+  min-height: 0;
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label);
+  color: var(--grey);
+}
+
+.issue-go:hover,
+.issue-go:active {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* --- Analytics --------------------------------------------------------
+
+   Built from the dashboard's row rhythm: mono column heads over a section
+   rule, item rules between rows, a bar under every figure. */
+
+.stat-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: var(--space-5);
+  border-top: var(--rule-section);
+  border-bottom: var(--rule-section);
+}
+
+.stat-cell {
+  padding: var(--space-3) 0 var(--space-4);
+}
+
+.stat-cell + .stat-cell {
+  border-left: var(--rule-item);
+  padding-left: var(--space-4);
+}
+
+.stat-cell-value {
+  margin-top: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-tight);
+}
+
+.stat-heading {
+  display: block;
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+  font-family: var(--font-mono);
+  font-weight: normal;
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label-wide);
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+}
+
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stat-table th {
+  text-align: left;
+  vertical-align: baseline;
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-bottom: var(--rule-section);
+  font-family: var(--font-mono);
+  font-weight: normal;
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label-wide);
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.stat-table td {
+  text-align: left;
+  vertical-align: baseline;
+  padding: var(--space-3) var(--space-3) var(--space-4) 0;
+  border-bottom: var(--rule-item);
+}
+
+.stat-table tr:last-child td {
+  border-bottom: var(--rule-section);
+}
+
+.stat-edition {
+  font-size: var(--fs-label-data);
+  letter-spacing: var(--track-numeral);
+}
+
+.stat-number {
+  font-size: var(--fs-label);
+  letter-spacing: var(--track-numeral);
+  color: var(--grey);
+}
+
+.stat-question {
+  font-size: var(--fs-read-sm);
+  line-height: var(--lh-tight);
+}
+
+.stat-value {
+  display: block;
+  letter-spacing: var(--track-numeral);
+}
+
+.stat-table .bar-track {
+  margin-top: var(--space-2);
+  max-width: 160px;
+}

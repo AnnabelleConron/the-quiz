@@ -2,6 +2,8 @@
 // Client-rendered quiz. The edition can come from the page (prerendered
 // permalinks) or from the URL path (the fallback shell for editions
 // published after the last build).
+import SiteTop from './SiteTop.astro';
+
 interface Props {
   edition?: string | number | null;
 }
@@ -9,10 +11,7 @@ interface Props {
 const { edition = null } = Astro.props;
 ---
 
-<header class="site-top">
-  <a href="/" class="mono">The Quizz</a>
-  <a href="/archive" class="mono">Archive</a>
-</header>
+<SiteTop />
 <main id="quiz-app" data-edition={edition != null ? String(edition) : undefined}>
   <noscript>
     <p>The quiz needs JavaScript to load questions and record scores.</p>

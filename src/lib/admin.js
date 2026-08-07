@@ -11,21 +11,49 @@ export async function getSession() {
   return data.session || null;
 }
 
+// The masthead of the workshop. Carried by every admin screen, signed in
+// or not, so the editorial side is never mistaken for the paper.
+function adminBrand() {
+  return el('span', { class: 'admin-top-brand' }, [
+    el('span', { class: 'admin-top-name', text: 'The Quizz' }),
+    el('span', { class: 'admin-top-tag', text: 'Editorial' }),
+  ]);
+}
+
+// A labelled field. The label wraps the control, so the association holds
+// without ids to keep in step.
+export function field(labelText, control, modifier) {
+  return el('label', { class: 'field' + (modifier ? ' ' + modifier : '') }, [
+    el('span', { class: 'field-label', text: labelText }),
+    control,
+  ]);
+}
+
+export function statusChip(status) {
+  return el('span', { class: 'status status-' + status, text: status });
+}
+
 export function renderLogin(root) {
-  const email = el('input', { type: 'email', autocomplete: 'username', required: '' });
+  const email = el('input', {
+    type: 'email',
+    autocomplete: 'username',
+    required: '',
+    placeholder: 'you@example.com',
+  });
   const password = el('input', {
     type: 'password',
     autocomplete: 'current-password',
     required: '',
+    placeholder: ' ',
   });
   const errorLine = el('p', { class: 'mono form-error hidden', role: 'alert' });
-  const submit = el('button', { type: 'submit', text: 'Sign in' });
+  const submit = el('button', { type: 'submit', class: 'btn-primary btn-block', text: 'Sign in' });
   const form = el('form', { class: 'admin-login' }, [
-    el('h1', { text: 'Admin' }),
-    el('label', {}, [el('span', { class: 'label', text: 'Email' }), email]),
-    el('label', {}, [el('span', { class: 'label', text: 'Password' }), password]),
+    el('div', { class: 'admin-head' }, [el('h1', { text: 'Editorial' })]),
+    field('Email', email),
+    field('Password', password),
     errorLine,
-    submit,
+    el('div', { class: 'admin-login-actions' }, [submit]),
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -43,7 +71,7 @@ export function renderLogin(root) {
     }
     location.reload();
   });
-  root.replaceChildren(form);
+  root.replaceChildren(el('header', { class: 'admin-top' }, [adminBrand()]), form);
 }
 
 // Returns the session, or renders the login form and returns null.
@@ -56,21 +84,24 @@ export async function requireAdmin(root) {
   return session;
 }
 
-export function adminNav() {
-  const signOut = el('button', { class: 'small-btn', text: 'Sign out' });
+// The admin bar is deliberately not the public one: solid ink, no masthead.
+// `current` underlines the screen you are on.
+export function adminNav(current = null) {
+  const signOut = el('button', { type: 'button', text: 'Sign out' });
   signOut.addEventListener('click', async () => {
     await supabase.auth.signOut();
     location.href = '/admin';
   });
-  return el('header', { class: 'site-top' }, [
-    el('span', {}, [
-      el('a', { href: '/admin', class: 'mono', text: 'Dashboard' }),
-      document.createTextNode(' '),
-      el('a', { href: '/admin/analytics', class: 'mono', text: 'Analytics' }),
-      document.createTextNode(' '),
-      el('a', { href: '/', class: 'mono', text: 'Site' }),
+  const link = (href, text, key) =>
+    el('a', { href, text, 'aria-current': current && current === key ? 'page' : null });
+  return el('header', { class: 'admin-top' }, [
+    adminBrand(),
+    el('nav', { class: 'admin-top-links', 'aria-label': 'Editorial' }, [
+      link('/admin', 'Dashboard', 'dashboard'),
+      link('/admin/analytics', 'Analytics', 'analytics'),
+      link('/', 'Site', null),
+      signOut,
     ]),
-    signOut,
   ]);
 }
 

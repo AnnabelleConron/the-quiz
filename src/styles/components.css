@@ -1,0 +1,453 @@
+/* Reusable pieces. Anything used on more than one page lives here.
+   Nothing in this file knows what page it is on. */
+
+/* --- Labels -----------------------------------------------------------
+
+   Every label, dateline, stat line and utility caption on the site is one
+   of these. Uppercase, tracked out, monospace, and never used for anything
+   the reader has to read at length. */
+
+.label,
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+}
+
+/* The one label per page allowed to take the accent. */
+.label-accent {
+  color: var(--accent);
+}
+
+/* --- Public top bar ---------------------------------------------------
+
+   Sticky, hairline-thin, carrying only the site name and the menu. This is
+   deliberately not the admin bar: the reader gets the paper's ground and a
+   zone rule beneath, the editor gets a solid ink strip. They were one class
+   before and drifted into each other. */
+
+.site-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--bar-height);
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+  background-color: var(--paper);
+  border-bottom: var(--rule-zone);
+}
+
+.site-top-name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-lg);
+  letter-spacing: var(--track-label-wide);
+  text-transform: uppercase;
+}
+
+/* Three hairlines. A button, not an icon font, so it inherits focus. */
+.menu-toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.menu-toggle:hover,
+.menu-toggle:active {
+  background: transparent;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 22px;
+  margin-left: auto;
+  height: 1px;
+  background: var(--ink);
+}
+
+/* --- The menu ---------------------------------------------------------
+
+   A full page in its own right rather than a dropdown: the contents of the
+   paper, set at the same scale as a category name. */
+
+.site-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  background-color: var(--paper);
+  background-image: var(--ground-texture);
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+/* Capped to the same column as the bar it replaces, so the zone rule lands
+   in the same place when the menu opens. */
+.site-menu-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--measure-page);
+  margin: 0 auto;
+  height: var(--bar-height);
+  padding: 0 var(--gutter);
+  border-bottom: var(--rule-zone);
+}
+
+.menu-close {
+  border: none;
+  padding: 0;
+  min-height: var(--tap);
+  letter-spacing: var(--track-label-wide);
+}
+
+.menu-close:hover,
+.menu-close:active {
+  background: transparent;
+  color: var(--link-hover);
+}
+
+.site-menu-body {
+  max-width: var(--measure-page);
+  margin: 0 auto;
+  padding: var(--space-7) var(--gutter) var(--space-7);
+}
+
+.menu-nav {
+  display: grid;
+  margin-top: var(--space-4);
+  border-top: var(--rule-section);
+  border-bottom: var(--rule-section);
+}
+
+.menu-nav a {
+  display: grid;
+  grid-template-columns: var(--col-number) 1fr;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: var(--rule-item);
+}
+
+.menu-nav a:last-child {
+  border-bottom: none;
+}
+
+.menu-num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--grey);
+}
+
+.menu-name {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: var(--fs-display-xl);
+  line-height: var(--lh-display);
+  letter-spacing: var(--track-display);
+}
+
+/* --- Page footer ------------------------------------------------------
+
+   One quiet line under a faint rule, closing every public page. */
+
+/* No rule of its own: the section above always closes itself, so a border
+   here would double up against it. */
+.site-footer {
+  padding: var(--space-5) 0 var(--space-7);
+  text-align: center;
+}
+
+.site-footer .label {
+  letter-spacing: var(--track-label-widest);
+}
+
+/* Errors that replace a page's content rather than sitting inside it. */
+.load-error {
+  padding: var(--space-6) 0;
+  color: var(--grey);
+}
+
+/* --- Full-bleed bands -------------------------------------------------
+
+   The reading column is capped, but banded sections and rules run the full
+   width of it. This pulls an element out to the column edge and puts the
+   gutter back on the inside. */
+
+.bleed {
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+}
+
+/* --- Buttons ----------------------------------------------------------
+
+   Flat, square, hairline-edged, minimum 44px tap target. The border is the
+   component token, not the section rule: a button is a closed shape. */
+
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--track-label-wide);
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  border: var(--rule-component);
+  border-radius: 0;
+  min-height: var(--tap);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:hover,
+.btn:hover {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+button:active,
+.btn:active {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The one call to action per page. Ink filled at rest, accent on hover. */
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+  border-color: var(--ink);
+  letter-spacing: var(--track-label-wide);
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper-on-ink);
+}
+
+/* Full width, for the end of a section. */
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+/* Row-level actions in a list. Below the 44px tap target because they sit
+   in a dense admin table, never on a phone-first reading page. */
+.btn-small {
+  min-height: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-label-sm);
+  letter-spacing: var(--track-label);
+}
+
+/* --- Fields -----------------------------------------------------------
+
+   A wash of white over the ground rather than white, so a form does not
+   punch holes in the paper. Resting edge is the item rule, a filled field
+   firms up to the section rule, focus takes the accent. */
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='datetime-local'],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  font-family: var(--font-read);
+  font-size: var(--fs-read-sm);
+  line-height: var(--lh-read);
+  color: var(--ink);
+  background: var(--field);
+  border: var(--rule-item);
+  border-radius: 0;
+  padding: var(--space-3);
+  min-height: var(--tap);
+  outline: none;
+  appearance: none;
+}
+
+/* A field with something in it firms up from the faint rule to the section
+   rule, so a part-filled form shows its own progress. */
+input:not(:placeholder-shown),
+textarea:not(:placeholder-shown),
+select {
+  border-color: var(--ink);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--ink);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  background: var(--field-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--grey-on-ink);
+  font-style: italic;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 74px;
+}
+
+/* Fields holding machine values: dates, edition numbers, status. */
+.field-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-data);
+  letter-spacing: var(--track-numeral);
+}
+
+/* --- Marks ------------------------------------------------------------
+
+   Two square cells sharing one hairline edge, like cells ruled into a
+   printed grid. Unselected is a pen stroke on paper, selected is inverted.
+   No other states. */
+
+.marks {
+  display: inline-flex;
+  border: var(--rule-component);
+}
+
+.mark-btn {
+  width: var(--tap);
+  height: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+}
+
+.mark-btn + .mark-btn {
+  border-left: var(--rule-component);
+}
+
+.mark-btn svg {
+  display: block;
+}
+
+.mark-btn:hover,
+.mark-btn:active {
+  background: transparent;
+  color: var(--ink);
+}
+
+.mark-btn[aria-pressed='true'],
+.mark-btn[aria-pressed='true']:hover,
+.mark-btn[aria-pressed='true']:active {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+/* Locked after submission. The mark stays legible, it just stops moving. */
+.mark-btn:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+/* --- The upside-down answer ------------------------------------------
+
+   An homage to printed quizzes. Set in the display face between two rules,
+   so it reads as a strip cut from the foot of a page. */
+
+.answer-upside-down {
+  transform: rotate(180deg);
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: var(--fs-display-xs);
+  line-height: var(--lh-tight);
+  text-align: center;
+}
+
+/* --- Bars -------------------------------------------------------------
+
+   A hairline track with an ink fill. Used for per-category scores on the
+   quiz and per-question rates in the admin. */
+
+.bar-track {
+  width: 100%;
+  height: var(--bar-thickness);
+  border: var(--rule-item);
+}
+
+.bar {
+  height: 100%;
+  background: var(--ink);
+}
+
+/* --- Motion ----------------------------------------------------------- */
+
+/* The only animation on the site. */
+.fade-in {
+  animation: fade-in 0.5s ease-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+}
+
+/* --- Utility ---------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.muted {
+  color: var(--grey);
+}
+
+/* A state toggle, not a layout rule. It has to beat any display a layout
+   file sets on the same element, and those files load after this one. */
+.hidden {
+  display: none !important;
+}

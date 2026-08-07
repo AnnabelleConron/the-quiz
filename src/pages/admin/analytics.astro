@@ -4,14 +4,20 @@
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Analytics" noIndex={true}>
+<Base title="The Quizz, Analytics" noIndex={true} bodyClass="admin">
   <div id="admin-app"></div>
 </Base>
 
 <script>
   import { supabase } from '../../lib/supabase.js';
-  import { el } from '../../lib/quiz-render.js';
-  import { requireAdmin, adminNav, fetchQuizById, formatSydney } from '../../lib/admin.js';
+  import { el, pad2 } from '../../lib/quiz-render.js';
+  import {
+    requireAdmin,
+    adminNav,
+    statusChip,
+    fetchQuizById,
+    formatSydney,
+  } from '../../lib/admin.js';
 
   const root = document.getElementById('admin-app');
 
@@ -20,6 +26,16 @@ import Base from '../../layouts/Base.astro';
     const fill = el('div', { class: 'bar' });
     fill.style.width = pct + '%';
     return el('div', { class: 'bar-track' }, [fill]);
+  }
+
+  // A figure and its bar. Real numbers or nothing: with no data the cell is
+  // left empty rather than filled with a placeholder.
+  function figure(value, max, suffix) {
+    if (value == null) return el('td', {});
+    return el('td', {}, [
+      el('span', { class: 'stat-value mono', text: String(value) + (suffix || '') }),
+      bar(value, max),
+    ]);
   }
 
   async function renderOverview() {
@@ -31,46 +47,48 @@ import Base from '../../layouts/Base.astro';
       supabase.rpc('get_archive_stats'),
     ]);
     if (error) {
-      root.replaceChildren(adminNav(), el('p', { text: 'Could not load analytics.' }));
+      root.replaceChildren(
+        adminNav('analytics'),
+        el('p', { class: 'load-error', text: 'Could not load analytics.' })
+      );
       return;
     }
     const statMap = new Map((stats || []).map((r) => [r.quiz_id, r]));
-    const maxCompletions = Math.max(
-      1,
-      ...(stats || []).map((r) => Number(r.completion_count))
-    );
+    const maxCompletions = Math.max(1, ...(stats || []).map((r) => Number(r.completion_count)));
 
     const rows = (quizzes || []).map((quiz) => {
       const s = statMap.get(quiz.id);
       const count = s ? Number(s.completion_count) : 0;
       const avg = s && s.avg_score != null ? s.avg_score : null;
       return el('tr', {}, [
-        el('td', { class: 'mono' }, [
-          el('a', { href: '/admin/analytics?id=' + quiz.id, text: '#' + quiz.edition_number }),
-        ]),
-        el('td', { class: 'mono', text: quiz.status }),
-        el('td', {}, [el('span', { class: 'mono', text: String(count) }), bar(count, maxCompletions)]),
         el('td', {}, [
-          el('span', { class: 'mono', text: avg != null ? String(avg) : '' }),
-          ...(avg != null ? [bar(avg, 16)] : []),
+          el('a', {
+            class: 'stat-edition mono',
+            href: '/admin/analytics?id=' + quiz.id,
+            text: pad2(quiz.edition_number),
+          }),
         ]),
+        el('td', {}, [statusChip(quiz.status)]),
+        figure(count, maxCompletions),
+        figure(avg, 16),
       ]);
     });
 
     root.replaceChildren(
-      adminNav(),
-      el('h1', { text: 'Analytics' }),
+      adminNav('analytics'),
+      el('div', { class: 'admin-head' }, [el('h1', { text: 'Analytics' })]),
       el('table', { class: 'stat-table' }, [
         el('thead', {}, [
           el('tr', {}, [
-            el('th', { class: 'label', text: 'Edition' }),
-            el('th', { class: 'label', text: 'Status' }),
-            el('th', { class: 'label', text: 'Completions' }),
-            el('th', { class: 'label', text: 'Average' }),
+            el('th', { scope: 'col', text: 'No.' }),
+            el('th', { scope: 'col', text: 'Status' }),
+            el('th', { scope: 'col', text: 'Completions' }),
+            el('th', { scope: 'col', text: 'Average' }),
           ]),
         ]),
         el('tbody', {}, rows),
-      ])
+      ]),
+      el('p', { class: 'admin-note mono', text: 'All times Sydney' })
     );
   }
 
@@ -81,7 +99,10 @@ import Base from '../../layouts/Base.astro';
       supabase.rpc('get_question_stats', { p_quiz_id: id }),
     ]);
     if (!quiz) {
-      root.replaceChildren(adminNav(), el('p', { text: 'Quiz not found.' }));
+      root.replaceChildren(
+        adminNav('analytics'),
+        el('p', { class: 'load-error', text: 'Quiz not found.' })
+      );
       return;
     }
     const stats = Array.isArray(quizStats) ? quizStats[0] : quizStats;
@@ -95,42 +116,48 @@ import Base from '../../layouts/Base.astro';
       const responses = s ? Number(s.response_count) : 0;
       const pct = s && s.pct_correct != null ? Number(s.pct_correct) : null;
       return el('tr', {}, [
-        el('td', { class: 'mono', text: String(q.sort_order) }),
+        el('td', {}, [el('span', { class: 'stat-number mono', text: pad2(q.sort_order) })]),
         el('td', { class: 'stat-question', text: q.question_text }),
-        el('td', {}, [
-          el('span', {
-            class: 'mono',
-            text: pct != null ? pct + '%' : String(responses) + ' responses',
-          }),
-          ...(pct != null ? [bar(pct, 100)] : []),
-        ]),
+        pct != null
+          ? figure(pct, 100, '%')
+          : el('td', {}, [
+              el('span', {
+                class: 'stat-value mono muted',
+                text: responses === 1 ? '1 response' : responses + ' responses',
+              }),
+            ]),
       ]);
     });
 
-    root.replaceChildren(
-      adminNav(),
-      el('h1', {
-        text: 'Edition ' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : ''),
-      }),
-      el('table', { class: 'meta-table' }, [
-        el('tbody', {}, [
-          el('tr', {}, [el('th', { scope: 'row', text: 'Status' }), el('td', { text: quiz.status })]),
-          el('tr', {}, [
-            el('th', { scope: 'row', text: 'Publish' }),
-            el('td', { text: formatSydney(quiz.publish_at) }),
-          ]),
-          el('tr', {}, [
-            el('th', { scope: 'row', text: 'Completions' }),
-            el('td', { text: String(count) }),
-          ]),
-          el('tr', {}, [
-            el('th', { scope: 'row', text: 'Average' }),
-            el('td', { text: avg != null ? String(avg) : '' }),
-          ]),
-        ]),
+    // The figures that stand on their own, before the per-question detail.
+    const summary = el('div', { class: 'stat-summary' }, [
+      el('div', { class: 'stat-cell' }, [
+        el('p', { class: 'label muted', text: 'Completions' }),
+        el('p', { class: 'stat-cell-value', text: String(count) }),
       ]),
-      el('h2', { class: 'stat-heading', text: 'Correct answers per question' }),
-      el('table', { class: 'stat-table' }, [el('tbody', {}, rows)])
+    ]);
+    if (avg != null) {
+      summary.appendChild(
+        el('div', { class: 'stat-cell' }, [
+          el('p', { class: 'label muted', text: 'Average' }),
+          el('p', { class: 'stat-cell-value', text: String(avg) }),
+        ])
+      );
+    }
+
+    root.replaceChildren(
+      adminNav('analytics'),
+      el('div', { class: 'admin-head' }, [
+        el('h1', { text: 'Edition ' + pad2(quiz.edition_number) }),
+        statusChip(quiz.status),
+      ]),
+      el('p', { class: 'admin-note mono', text: formatSydney(quiz.publish_at) }),
+      summary,
+      el('h2', { class: 'label muted stat-heading', text: 'Correct answers per question' }),
+      el('table', { class: 'stat-table' }, [el('tbody', {}, rows)]),
+      el('p', { class: 'admin-note mono' }, [
+        el('a', { href: '/admin/analytics', text: 'All editions' }),
+      ])
     );
   }
 
@@ -144,7 +171,10 @@ import Base from '../../layouts/Base.astro';
       else await renderOverview();
     } catch (err) {
       console.error('[quizz admin]', err);
-      root.replaceChildren(adminNav(), el('p', { text: 'Could not load analytics.' }));
+      root.replaceChildren(
+        adminNav('analytics'),
+        el('p', { class: 'load-error', text: 'Could not load analytics.' })
+      );
     }
   })();
 </script>

@@ -1,14 +1,13 @@
 ---
-// Archive: every visible edition, newest first, with live stats and this
-// device's score where it played. Past editions stay fully playable.
+// Archive: every visible edition as a single ruled line. Editions this
+// device has played are struck through but stay in the list and stay
+// playable, because a group often wants to run an old one again.
 import Base from '../layouts/Base.astro';
+import SiteTop from '../components/SiteTop.astro';
 ---
 
-<Base title="The Quizz, Archive" description="Every edition of The Quizz.">
-  <header class="site-top">
-    <a href="/" class="mono">The Quizz</a>
-    <span class="mono">Archive</span>
-  </header>
+<Base title="The Quizz, Archive" description="Every edition of The Quizz." bodyClass="wide">
+  <SiteTop current="archive" />
   <main id="archive-app">
     <noscript>
       <p>The archive needs JavaScript to load editions.</p>
@@ -18,77 +17,136 @@ import Base from '../layouts/Base.astro';
 
 <script>
   import { supabase } from '../lib/supabase.js';
-  import { el, formatDate } from '../lib/quiz-render.js';
+  import { el, pad2, formatNextEdition } from '../lib/quiz-render.js';
   import { loadProgress } from '../lib/session.js';
 
   const root = document.getElementById('archive-app');
+
+  const FILTERS = [
+    { key: 'oldest', label: 'Oldest' },
+    { key: 'newest', label: 'Newest' },
+    { key: 'uncompleted', label: 'Uncompleted' },
+  ];
+
+  function sortFor(key, editions) {
+    const list = [...editions];
+    if (key === 'oldest') return list.sort((a, b) => a.number - b.number);
+    if (key === 'uncompleted') {
+      return list.sort((a, b) => (a.played === b.played ? b.number - a.number : a.played ? 1 : -1));
+    }
+    return list.sort((a, b) => b.number - a.number);
+  }
+
+  function buildRow(edition, isLast) {
+    const row = el(
+      'a',
+      {
+        class: 'archive-row bleed' + (edition.played ? ' is-played' : '') + (isLast ? ' is-last' : ''),
+        href: '/quiz/' + edition.number,
+      },
+      [
+        el('span', { class: 'archive-number', text: pad2(edition.number) }),
+        el('span', { class: 'archive-cats', text: edition.categories.join('  ·  ') }),
+      ]
+    );
+    // The strike is drawn, not spoken. Screen readers get the word.
+    if (edition.played) {
+      row.appendChild(el('span', { class: 'visually-hidden', text: ' (played)' }));
+    }
+    return row;
+  }
 
   (async () => {
     if (!root) return;
     root.textContent = 'Loading the archive.';
     try {
-      const [{ data: quizzes, error: quizError }, { data: stats }] = await Promise.all([
-        supabase
-          .from('quizzes')
-          .select('id, edition_number, title, publish_at, categories(name, sort_order)')
-          .order('edition_number', { ascending: false }),
-        supabase.rpc('get_archive_stats'),
+      const { data: quizzes, error } = await supabase
+        .from('quizzes')
+        .select('id, edition_number, publish_at, categories(name, sort_order)')
+        .order('edition_number', { ascending: false });
+      if (error) throw error;
+
+      const masthead = el('div', { class: 'masthead masthead-archive' }, [
+        el('h1', { class: 'masthead-title', text: 'The Archive' }),
       ]);
-      if (quizError) throw quizError;
 
       if (!quizzes || quizzes.length === 0) {
-        root.replaceChildren(el('p', { text: 'No editions yet.' }));
+        root.replaceChildren(
+          masthead,
+          el('div', { class: 'count-strip mono bleed', text: 'No quizzes yet' })
+        );
         return;
       }
 
-      const statMap = new Map((stats || []).map((r) => [r.quiz_id, r]));
-      const rows = quizzes.map((quiz) => {
-        const s = statMap.get(quiz.id);
-        const count = s ? Number(s.completion_count) : 0;
-        const avg = s ? s.avg_score : null;
-        const mine = loadProgress(quiz.id).completed;
+      const editions = quizzes.map((quiz) => ({
+        number: quiz.edition_number,
+        publishAt: quiz.publish_at,
+        played: Boolean(loadProgress(quiz.id).completed),
+        categories: [...quiz.categories]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((c) => c.name),
+      }));
 
-        // Real numbers or nothing. The average appears from two completions
-        // onward, matching the final panel rule.
-        const parts = [];
-        if (count >= 1) {
-          parts.push(count === 1 ? '1 group played' : count + ' groups played');
-        }
-        if (count >= 2 && avg != null) {
-          parts.push('average ' + avg);
-        }
-        if (mine) {
-          parts.push('your score ' + mine.score + '/16');
-        }
-
-        const heading = el('h2', {}, [
-          el('a', {
-            href: '/quiz/' + quiz.edition_number,
-            text: 'Edition ' + quiz.edition_number + (quiz.title ? ', ' + quiz.title : ''),
-          }),
-        ]);
-
-        return el('article', { class: 'archive-row' }, [
-          heading,
-          el('p', { class: 'archive-date mono', text: formatDate(quiz.publish_at) }),
-          el('p', {
-            class: 'archive-categories',
-            text: [...quiz.categories]
-              .sort((a, b) => a.sort_order - b.sort_order)
-              .map((c) => c.name)
-              .join(', '),
-          }),
-          ...(parts.length > 0
-            ? [el('p', { class: 'archive-stats mono', text: parts.join(', ') })]
-            : []),
-        ]);
+      const total = editions.length;
+      const countStrip = el('div', {
+        class: 'count-strip mono bleed',
+        text: total + (total === 1 ? ' quiz' : ' quizzes'),
       });
 
-      root.replaceChildren(...rows);
+      const list = el('div', { class: 'archive-list' });
+      function paint(key) {
+        const sorted = sortFor(key, editions);
+        list.replaceChildren(
+          ...sorted.map((edition, index) => buildRow(edition, index === sorted.length - 1))
+        );
+      }
+
+      const parts = [masthead, countStrip];
+
+      // One edition cannot be sorted, so the row of filters would be an
+      // empty gesture. It appears once there is something to order.
+      if (total > 1) {
+        let current = 'newest';
+        const buttons = FILTERS.map((filter) =>
+          el('button', {
+            type: 'button',
+            class: 'filter-btn',
+            'aria-pressed': String(filter.key === current),
+            text: filter.label,
+          })
+        );
+        buttons.forEach((button, index) => {
+          button.addEventListener('click', () => {
+            current = FILTERS[index].key;
+            buttons.forEach((other, i) =>
+              other.setAttribute('aria-pressed', String(FILTERS[i].key === current))
+            );
+            paint(current);
+          });
+        });
+        parts.push(
+          el('div', { class: 'filters bleed', role: 'group', 'aria-label': 'Order' }, buttons)
+        );
+        paint(current);
+      } else {
+        paint('newest');
+      }
+
+      parts.push(list);
+      parts.push(
+        el('footer', { class: 'site-footer' }, [
+          el('p', {
+            class: 'label muted',
+            text: 'Next edition: ' + formatNextEdition(editions[0].publishAt),
+          }),
+        ])
+      );
+
+      root.replaceChildren(...parts);
     } catch (err) {
       console.error('[quizz]', err);
       root.replaceChildren(
-        el('p', { text: 'Something went wrong loading the archive. Refresh to try again.' })
+        el('p', { class: 'load-error', text: 'Something went wrong loading the archive. Refresh to try again.' })
       );
     }
   })();

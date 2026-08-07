@@ -1,96 +1,198 @@
 ---
-// Home: the current week's quiz (most recent visible edition).
-// If this device already completed it, a compact result panel is shown
-// instead of a fresh quiz.
+// Home: the front page. The current week's edition, what is behind it in
+// the archive, and what the paper is. The quiz itself lives at its own
+// permalink; this page points at it.
 import Base from '../layouts/Base.astro';
+import SiteTop from '../components/SiteTop.astro';
 ---
 
 <Base>
-  <header class="home-header">
-    <h1>The Quizz</h1>
-    <p class="mono">16 questions, 4 categories,<br />every Saturday</p>
-  </header>
-  <hr />
+  <SiteTop current="home" />
   <main id="home-app">
     <noscript>
-      <p>The quiz needs JavaScript to load questions and record scores.</p>
+      <p>The Quizz needs JavaScript to load this week's edition.</p>
     </noscript>
   </main>
-  <footer class="home-footer">
-    <hr />
-    <p class="mono"><a href="/archive">All editions</a></p>
-  </footer>
 </Base>
 
 <script>
   import {
-    initQuiz,
     fetchLatestQuiz,
-    fetchQuizStats,
-    buildShareText,
-    copyToClipboard,
-    formatDate,
+    formatDateline,
+    formatNextEdition,
+    pad2,
     el,
   } from '../lib/quiz-render.js';
   import { loadProgress } from '../lib/session.js';
 
   const root = document.getElementById('home-app');
 
-  async function renderCompleted(quiz, completed) {
-    let stats = null;
-    try {
-      stats = await fetchQuizStats(quiz.id);
-    } catch {
-      // stats are decorative, the panel still works without them
+  const ONES = [
+    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
+    'nineteen',
+  ];
+  const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+  // Counts are set in words, the way a masthead sets them. Past ninety-nine
+  // the digits are clearer, so it falls back.
+  function inWords(n) {
+    if (n > 99) return String(n);
+    const word = n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '');
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+
+  function masthead() {
+    return el('div', { class: 'masthead masthead-home' }, [
+      el('p', { class: 'label masthead-kicker', text: 'A new quiz every Saturday' }),
+      el('h1', { class: 'masthead-title', text: 'The Quizz' }),
+    ]);
+  }
+
+  function dateline(quiz) {
+    const parts = formatDateline(quiz.publish_at);
+    return el('div', { class: 'dateline mono' }, [
+      el('span', { text: 'No. ' + pad2(quiz.edition_number) }),
+      el('span', { class: 'dateline-date', text: parts.date }),
+      el('span', { text: parts.weekday }),
+    ]);
+  }
+
+  // This week's edition: the four category names at the scale they are met
+  // at, and one way in.
+  function editionSection(quiz, categories, completed) {
+    const section = el('section', { class: 'edition bleed' }, [
+      el('div', { class: 'edition-head' }, [
+        el('p', { class: 'label label-accent', text: "This week's edition" }),
+        el('p', { class: 'label muted', text: '16 questions' }),
+      ]),
+      el(
+        'ol',
+        { class: 'contents-list' },
+        categories.map((category, index) =>
+          el('li', { class: 'contents-row' }, [
+            el('span', { class: 'contents-num mono', text: pad2(index + 1) }),
+            el('h2', { class: 'contents-name', text: category.name }),
+          ])
+        )
+      ),
+    ]);
+
+    const href = '/quiz/' + quiz.edition_number;
+
+    if (completed) {
+      // Played on this device. The score, and a quieter way back in.
+      section.appendChild(
+        el('div', { class: 'edition-played' }, [
+          el('p', { class: 'label muted', text: 'You played this edition' }),
+          el('p', { class: 'score-figure' }, [
+            el('span', { class: 'score-number', text: pad2(completed.score) }),
+            el('span', { class: 'score-total', text: '/16' }),
+          ]),
+          el('a', { class: 'btn', href, text: 'Review your answers' }),
+        ])
+      );
+    } else {
+      section.appendChild(
+        el('div', { class: 'edition-cta' }, [
+          el('a', {
+            class: 'btn btn-primary btn-block',
+            href,
+            text: "Start this week's quiz",
+          }),
+        ])
+      );
     }
-    const count = stats ? Number(stats.completion_count) : completed.count || 0;
-    const avg = stats && stats.avg_score != null ? stats.avg_score : completed.avg;
-    const showAverage = count >= 2 && avg != null;
 
-    const shareBtn = el('button', { text: 'Copy share text' });
-    shareBtn.addEventListener('click', async () => {
-      const ok = await copyToClipboard(buildShareText(quiz.edition_number, completed.score));
-      shareBtn.textContent = ok ? 'Copied' : 'Copy failed, select the text manually';
-    });
+    return section;
+  }
 
-    root.replaceChildren(
-      el('section', { class: 'final-panel' }, [
-        el('p', {
-          class: 'mono',
-          text: 'Edition #' + quiz.edition_number + ', ' + formatDate(quiz.publish_at),
-        }),
-        el('p', { class: 'label', text: 'Your score' }),
-        el('p', { class: 'score-big', text: completed.score + '/16' }),
-        ...(showAverage
-          ? [el('p', { text: 'The average this week is ' + avg + '.' })]
-          : []),
-        shareBtn,
-        el('p', { class: 'panel-link' }, [
-          el('a', { href: '/quiz/' + quiz.edition_number, text: 'See the quiz' }),
-        ]),
-      ])
-    );
+  function pitch(label, title, text, href, action, modifier) {
+    return el('section', { class: 'pitch ' + modifier }, [
+      el('p', { class: 'label muted', text: label }),
+      el('h2', { class: 'pitch-title', text: title }),
+      el('p', { class: 'pitch-text', text }),
+      el('a', { class: 'btn', href, text: action }),
+    ]);
+  }
+
+  // Back issues are every edition except the one on the front page.
+  function backIssuesCopy(total) {
+    const back = Math.max(total - 1, 0);
+    if (back === 0) {
+      return {
+        title: 'The first edition',
+        text:
+          'This is the first one. Every edition stays online from here, in full, with its ' +
+          'answers, so nothing published is ever taken down.',
+      };
+    }
+    return {
+      title: inWords(back) + (back === 1 ? ' back issue' : ' back issues'),
+      text:
+        'Every edition since the first stays online, in full, with its answers. Good for a ' +
+        'rainy afternoon or a long drive.',
+    };
   }
 
   (async () => {
     if (!root) return;
-    root.textContent = 'Loading the quiz.';
+    root.textContent = 'Loading this week.';
     try {
-      const quiz = await fetchLatestQuiz();
+      const [quiz, { count }] = await Promise.all([
+        fetchLatestQuiz(),
+        import('../lib/supabase.js').then(({ supabase }) =>
+          supabase.from('quizzes').select('id', { count: 'exact', head: true })
+        ),
+      ]);
+
       if (!quiz) {
-        root.replaceChildren(el('p', { text: 'No quiz has been published yet.' }));
+        root.replaceChildren(
+          masthead(),
+          el('section', { class: 'pitch pitch-last' }, [
+            el('p', { class: 'label muted', text: 'The Quizz' }),
+            el('h2', { class: 'pitch-title', text: 'The first edition is on its way' }),
+            el('p', {
+              class: 'pitch-text',
+              text: 'A new quiz is published every Saturday morning. Nothing yet, but soon.',
+            }),
+          ])
+        );
         return;
       }
-      const progress = loadProgress(quiz.id);
-      if (progress.completed) {
-        await renderCompleted(quiz, progress.completed);
-      } else {
-        await initQuiz(root, { quiz });
-      }
+
+      const categories = [...(quiz.categories || [])].sort((a, b) => a.sort_order - b.sort_order);
+      const completed = loadProgress(quiz.id).completed;
+      const total = typeof count === 'number' ? count : 1;
+      const back = backIssuesCopy(total);
+
+      root.replaceChildren(
+        masthead(),
+        dateline(quiz),
+        editionSection(quiz, categories, completed),
+        pitch('Past quizzes', back.title, back.text, '/archive', 'Visit the archives', ''),
+        pitch(
+          'About',
+          'One quiz, once a week',
+          'The Quizz is written by hand and published every Saturday morning. Four categories, ' +
+            'sixteen questions, meant to be played out loud with one phone passed around a ' +
+            'table. No accounts, no sign-in, nothing to install.',
+          '/about',
+          'Find out more',
+          'pitch-last'
+        ),
+        el('footer', { class: 'site-footer' }, [
+          el('p', {
+            class: 'label muted',
+            text: 'Next edition: ' + formatNextEdition(quiz.publish_at),
+          }),
+        ])
+      );
     } catch (err) {
       console.error('[quizz]', err);
       root.replaceChildren(
-        el('p', { text: 'Something went wrong loading the quiz. Refresh to try again.' })
+        masthead(),
+        el('p', { class: 'load-error', text: 'Something went wrong. Refresh to try again.' })
       );
     }
   })();

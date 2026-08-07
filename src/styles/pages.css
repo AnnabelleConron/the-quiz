@@ -1,0 +1,534 @@
+/* Layout for the public pages: home, quiz, archive, about.
+   Structure only. Every colour, size and rule comes from tokens.css. */
+
+/* --- Mastheads --------------------------------------------------------
+
+   One treatment, three sizes. The quiz sets its name above a week's
+   questions, home sets it as the front page, the archive and About name
+   themselves. */
+
+.masthead {
+  padding: var(--space-6) 0 var(--space-5);
+  text-align: center;
+  border-bottom: var(--rule-item);
+}
+
+.masthead-kicker {
+  letter-spacing: var(--track-label-widest);
+  color: var(--grey);
+}
+
+.masthead-title {
+  margin-top: var(--space-2);
+  font-size: var(--fs-display-3xl);
+  line-height: 0.92;
+}
+
+/* The front page carries the name larger than any page inside it. */
+.masthead-home {
+  padding: var(--space-7) 0 var(--space-6);
+}
+
+.masthead-home .masthead-title {
+  font-size: var(--fs-masthead);
+  line-height: 0.86;
+  letter-spacing: var(--track-display-tight);
+}
+
+/* No kicker: the archive is named once and plainly. */
+.masthead-archive .masthead-title {
+  margin-top: 0;
+}
+
+/* About closes its masthead with a zone rule, because what follows is the
+   whole page rather than a strip of metadata. */
+.masthead-about {
+  padding: clamp(var(--space-6), 6vw, var(--space-8)) 0 clamp(var(--space-5), 4vw, var(--space-7));
+  border-bottom: var(--rule-zone);
+}
+
+.masthead-about .masthead-title {
+  font-size: var(--fs-masthead);
+}
+
+/* --- Home -------------------------------------------------------------
+
+   The edition section is the front page's one banded zone: everything a
+   reader needs to decide to start is inside it. */
+
+.edition {
+  background-color: var(--wash);
+  border-bottom: var(--rule-zone);
+  padding-top: var(--space-5);
+}
+
+.edition-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.edition-head .label {
+  letter-spacing: var(--track-label-wide);
+}
+
+.edition .contents-list {
+  margin-top: var(--space-4);
+}
+
+.edition-cta {
+  padding: var(--space-5) 0 var(--space-6);
+}
+
+/* Played on this device. Quieter than the call to action it replaces. */
+.edition-played {
+  margin-top: var(--space-4);
+  padding: var(--space-4) 0 var(--space-5);
+  border-top: var(--rule-section);
+}
+
+.edition-played .score-figure {
+  margin-top: var(--space-1);
+}
+
+.edition-played .score-number {
+  font-size: var(--fs-display-4xl);
+}
+
+.edition-played .score-total {
+  font-size: var(--fs-display-sm);
+}
+
+.edition-played .btn {
+  margin-top: var(--space-4);
+}
+
+/* The two sections below the fold: what is behind this week, and what the
+   paper is. Same shape, secondary action each. */
+.pitch {
+  padding: var(--space-6) 0 var(--space-6);
+  border-bottom: var(--rule-section);
+}
+
+.pitch-last {
+  border-bottom: var(--rule-zone);
+}
+
+.pitch-title {
+  margin-top: var(--space-2);
+  font-size: var(--fs-display-xl);
+}
+
+.pitch-text {
+  margin: var(--space-3) 0 var(--space-5);
+  line-height: var(--lh-loose);
+}
+
+/* --- Archive ----------------------------------------------------------
+
+   Every edition as one ruled line: the number, and the four categories it
+   ran. No date, no average, no completion count. */
+
+.count-strip {
+  padding: var(--space-2) var(--gutter);
+  border-bottom: var(--rule-zone);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: var(--rule-section);
+  padding-inline: 0;
+}
+
+.filter-btn {
+  border: none;
+  padding: var(--space-3) var(--space-2);
+  color: var(--grey);
+  letter-spacing: var(--track-label);
+}
+
+.filter-btn + .filter-btn {
+  border-left: var(--rule-item);
+}
+
+.filter-btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+.archive-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--rule-item);
+}
+
+.archive-row:hover {
+  background-color: var(--wash);
+  color: var(--ink);
+}
+
+/* The list closes on a section rule, not a faint one. */
+.archive-row.is-last {
+  border-bottom: var(--rule-section);
+}
+
+.archive-number {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-display);
+  letter-spacing: var(--track-display);
+}
+
+/* One line, running off to the right rather than wrapping. The fade is a
+   mask, so it works over the hover ground as well as the page. */
+.archive-cats {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--fs-read-xs);
+  line-height: var(--lh-tight);
+  -webkit-mask-image: var(--mask-fade-right);
+  mask-image: var(--mask-fade-right);
+}
+
+/* Played on this device. Struck with a rule from the system rather than a
+   browser line-through, so the weight matches every other hairline. */
+.archive-row.is-played {
+  color: var(--grey);
+}
+
+.archive-row.is-played::after {
+  content: '';
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 50%;
+  height: 1px;
+  background: var(--rule-faint);
+}
+
+/* --- About ------------------------------------------------------------ */
+
+.about {
+  padding: clamp(var(--space-7), 8vw, 88px) 0 clamp(var(--space-7), 9vw, 96px);
+  border-bottom: var(--rule-item);
+}
+
+.about-title {
+  font-size: clamp(var(--fs-display-xl), 8.5vw, var(--fs-display-3xl));
+}
+
+.about-text {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: var(--rule-item);
+  font-size: clamp(var(--fs-read), 2.4vw, var(--fs-read-xl));
+  line-height: 1.5;
+}
+
+/* --- Quiz -------------------------------------------------------------
+
+   The quiz uses the base .masthead above, then closes its front matter
+   with the dateline. */
+
+/* Dateline. Edition, date, weekday, and the zone rule that closes the
+   front matter. */
+.dateline {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: var(--rule-zone);
+}
+
+.dateline-date {
+  text-align: center;
+  color: var(--grey);
+}
+
+/* Contents. The week's four categories, set at the scale they will be
+   met at further down the page. */
+.contents {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-5);
+  border-bottom: var(--rule-zone);
+}
+
+.contents-list {
+  list-style: none;
+}
+
+.contents-row {
+  display: grid;
+  grid-template-columns: var(--col-number) 1fr;
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: var(--rule-item);
+}
+
+.contents-row:last-child {
+  border-bottom: none;
+}
+
+.contents-num {
+  color: var(--grey);
+  padding-top: var(--space-2);
+}
+
+.contents-name {
+  font-size: var(--fs-display-lg);
+}
+
+.contents-note {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: var(--rule-item);
+  color: var(--grey);
+}
+
+.social-proof {
+  margin-top: var(--space-3);
+  color: var(--grey);
+}
+
+/* --- Category bands --------------------------------------------------- */
+
+/* Each category opens with a banded header, named once. The section rules
+   above and below it are what separate one category from the last. */
+.category-header {
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-top: var(--rule-section);
+  border-bottom: var(--rule-section);
+  background-color: var(--wash);
+}
+
+.category-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  letter-spacing: var(--track-label-wide);
+  color: var(--grey);
+}
+
+.category-name {
+  margin-top: var(--space-2);
+  font-size: var(--fs-display-lg);
+}
+
+/* --- Questions -------------------------------------------------------- */
+
+.question {
+  display: grid;
+  grid-template-columns: var(--col-number) 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 var(--space-5);
+  border-bottom: var(--rule-item);
+  /* Cleared past the sticky bar when the editor's note scrolls back to it. */
+  scroll-margin-top: calc(var(--bar-height) + var(--space-4));
+}
+
+/* The last question in a category carries no rule, so nothing stacks
+   against the section rule that opens the next one. */
+.question:last-child {
+  border-bottom: none;
+}
+
+.question:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.question-number {
+  padding-top: var(--space-1);
+  letter-spacing: var(--track-numeral);
+  color: var(--grey);
+}
+
+.question-text {
+  font-size: var(--fs-read-lg);
+}
+
+.reveal-row {
+  margin-top: var(--space-3);
+}
+
+/* The answer sits between two faint rules, cut from the foot of a page. */
+.answer-row {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-1);
+  border-top: var(--rule-item);
+  border-bottom: var(--rule-item);
+  display: flex;
+  justify-content: center;
+}
+
+.marks-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.stat {
+  color: var(--grey);
+}
+
+/* --- The end of the page ---------------------------------------------- */
+
+.quiz-end {
+  margin-top: var(--space-8);
+}
+
+/* Score. A zone rule and a banded ground: this is a different part of the
+   page from the questions above it. */
+.score {
+  border-top: var(--rule-zone);
+  background-color: var(--wash);
+  padding-bottom: var(--space-6);
+}
+
+.score-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+}
+
+.score-head .label {
+  letter-spacing: var(--track-label-wide);
+}
+
+.score-figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.score-number {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: var(--fs-display-5xl);
+  line-height: var(--lh-numeral);
+  letter-spacing: var(--track-display-tight);
+}
+
+.score-total {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-display);
+  color: var(--grey);
+}
+
+/* Week's average and players, side by side, boxed in by section rules. */
+.score-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: var(--space-5);
+  margin-inline: calc(var(--gutter) * -1);
+  border-top: var(--rule-section);
+  border-bottom: var(--rule-section);
+}
+
+.score-stat {
+  padding: var(--space-3) var(--gutter) var(--space-4);
+}
+
+.score-stat + .score-stat {
+  border-left: var(--rule-item);
+}
+
+.score-stat-value {
+  margin-top: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-tight);
+}
+
+/* The one-completion case. A statement, not a number. */
+.score-first {
+  margin-top: var(--space-5);
+  margin-inline: calc(var(--gutter) * -1);
+  padding: var(--space-3) var(--gutter) var(--space-4);
+  border-top: var(--rule-section);
+  border-bottom: var(--rule-section);
+}
+
+/* Per-category breakdown, calculated from the marks on this device. */
+.score-breakdown {
+  margin-top: var(--space-5);
+}
+
+.score-breakdown > .label {
+  letter-spacing: var(--track-label-wide);
+}
+
+.breakdown-list {
+  margin-top: var(--space-3);
+}
+
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-3);
+  border-bottom: var(--rule-item);
+}
+
+.breakdown-row:last-child {
+  border-bottom: none;
+}
+
+.breakdown-name {
+  font-size: var(--fs-read-sm);
+  line-height: var(--lh-tight);
+}
+
+.breakdown-score {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-xs);
+  line-height: var(--lh-display);
+}
+
+.breakdown-total {
+  font-size: var(--fs-read-xs);
+  color: var(--grey);
+}
+
+.breakdown-row .bar-track {
+  grid-column: 1 / -1;
+  margin-top: var(--space-2);
+}
+
+.score-share {
+  margin-top: var(--space-5);
+}
+
+/* Editor's note. The incomplete end state, and the submission failure. */
+.endnote {
+  border-top: var(--rule-zone);
+  padding: var(--space-5) 0 var(--space-6);
+}
+
+.endnote-text {
+  margin-top: var(--space-3);
+  font-size: var(--fs-read-lg);
+}
+
+.endnote-back {
+  margin-top: var(--space-4);
+}
