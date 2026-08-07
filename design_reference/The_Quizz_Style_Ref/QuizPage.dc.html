@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400&family=DM+Mono:wght@400&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; }
+  /* Rule system — three tiers, one meaning each.
+     T1 zone boundary: 3px double #16181A
+     T2 section boundary: 1px solid #16181A
+     T3 list separator: 1px solid rgba(22,24,26,0.28)
+     Component borders (buttons, mark cells) are closed shapes: 1px solid #16181A */
+  a { color: #16181A; text-decoration: none; }
+  a:hover { color: #B32718; }
+  button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+</style>
+</helmet>
+<div style="position: relative; min-height: 100%; background-color: #E6E8E5; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22 opacity=%220.09%22/%3E%3C/svg%3E'); color: #16181A; font-family: 'Source Serif 4', Georgia, serif; -webkit-font-smoothing: antialiased;">
+
+  <div style="position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 46px; background-color: #E6E8E5; border-bottom: 3px double #16181A;">
+    <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;">The Quizz</span>
+    <button onClick="{{ toggleMenu }}" aria-label="Menu" style="display: flex; flex-direction: column; gap: 4px; width: 22px; padding: 8px 0;">
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+    </button>
+  </div>
+
+  <div style="padding: 30px 18px 22px; text-align: center; border-bottom: 1px solid rgba(22,24,26,0.28);">
+    <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.34em; text-transform: uppercase; color: #6E7370;">The Weekend Quiz</div>
+    <h1 style="margin: 8px 0 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 62px; line-height: 0.92; letter-spacing: -0.02em;">The Quizz</h1>
+  </div>
+
+  <div style="display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 10px; padding: 9px 18px; border-bottom: 3px double #16181A; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;">
+    <span>No. 47</span>
+    <span style="text-align: center; color: #6E7370;">1 August 2026</span>
+    <span>Saturday</span>
+  </div>
+
+  <section style="padding: 26px 18px 22px; border-bottom: 3px double #16181A;">
+    <div style="display: grid; gap: 0;">
+      <sc-for list="{{ cats }}" as="c" hint-placeholder-count="4">
+        <div style="display: grid; grid-template-columns: 26px 1fr; align-items: start; gap: 10px; padding: 13px 0; border-bottom: {{ c.sep }};">
+          <span style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6E7370; padding-top: 9px;">{{ c.num }}</span>
+          <h2 style="margin: 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 33px; line-height: 1.0; letter-spacing: -0.015em; text-wrap: pretty;">{{ c.name }}</h2>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <sc-for list="{{ cats }}" as="c" hint-placeholder-count="4">
+    <section data-cat-anchor="{{ c.num }}">
+      <header style="padding: 22px 18px 14px; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A; background-color: rgba(22,24,26,0.045);">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #6E7370;">
+          <span>Category {{ c.num }} of 04</span>
+          <span>Q{{ c.range }}</span>
+        </div>
+        <h2 style="margin: 7px 0 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 36px; line-height: 1.0; letter-spacing: -0.02em; text-wrap: pretty;">{{ c.name }}</h2>
+      </header>
+      <sc-for list="{{ c.questions }}" as="q" hint-placeholder-count="4">
+        <div data-q-anchor="{{ q.id }}" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 18px 18px 20px; border-bottom: {{ q.sep }};">
+          <span style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6E7370; padding-top: 4px;">{{ q.num }}</span>
+          <div>
+            <p style="margin: 0; font-size: 18.5px; line-height: 1.34; text-wrap: pretty;">{{ q.text }}</p>
+            <sc-if value="{{ q.hidden }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ q.onReveal }}" style="margin-top: 13px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; border: 1px solid #16181A; padding: 7px 12px;" style-hover="background: #16181A; color: #E6E8E5;">Reveal answer &darr;</button>
+            </sc-if>
+            <sc-if value="{{ q.revealed }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px;">
+                <sc-if value="{{ answerTier3 }}" hint-placeholder-val="{{ true }}">
+                  <div style="border-top: 1px solid rgba(22,24,26,0.28); border-bottom: 1px solid rgba(22,24,26,0.28); padding: 14px 4px; display: flex; justify-content: center;">
+                    <span style="transform: rotate(180deg); font-family: 'Bodoni Moda', Didot, serif; font-size: 21px; line-height: 1.2; text-align: center;">{{ q.answer }}</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ answerFull }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-top: 1px solid #16181A; border-bottom: 1px solid #16181A; padding: 14px 4px; display: flex; justify-content: center;">
+                    <span style="transform: rotate(180deg); font-family: 'Bodoni Moda', Didot, serif; font-size: 21px; line-height: 1.2; text-align: center;">{{ q.answer }}</span>
+                  </div>
+                </sc-if>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+                  <div style="display: flex; border: 1px solid #16181A;">
+                    <button onClick="{{ q.onCorrect }}" aria-label="Correct" style="width: 36px; height: 34px; display: grid; place-items: center; background: {{ q.tickBg }}; color: {{ q.tickInk }};">
+                      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 9.6 L6.8 13.2 L15 4.4"></path></svg>
+                    </button>
+                    <button onClick="{{ q.onWrong }}" aria-label="Wrong" style="width: 36px; height: 34px; display: grid; place-items: center; border-left: 1px solid #16181A; background: {{ q.crossBg }}; color: {{ q.crossInk }};">
+                      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1"><path d="M4.4 4.4 L13.6 13.6"></path><path d="M13.6 4.4 L4.4 13.6"></path></svg>
+                    </button>
+                  </div>
+                  <sc-if value="{{ q.marked }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #6E7370;">{{ q.pct }}% of players got this</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+  </sc-for>
+
+  <sc-if value="{{ isComplete }}" hint-placeholder-val="{{ true }}">
+    <section style="margin-top: 64px; border-top: 3px double #16181A; background-color: rgba(22,24,26,0.045);">
+      <div style="padding: 22px 18px 26px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase;">
+          <span style="color: #B32718;">Your score</span>
+          <span style="color: #6E7370;">Edition No. 47</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 6px;">
+          <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 132px; line-height: 0.82; letter-spacing: -0.04em;">{{ scoreLabel }}</span>
+          <span style="font-family: 'Bodoni Moda', Didot, serif; font-size: 30px; line-height: 1; color: #6E7370;">/16</span>
+        </div>
+      </div>
+
+      <sc-if value="{{ showAverage }}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A;">
+          <div style="padding: 12px 18px 14px;">
+            <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #6E7370;">Week's average</div>
+            <div style="font-family: 'Bodoni Moda', Didot, serif; font-size: 30px; line-height: 1.1; margin-top: 2px;">{{ average }}</div>
+          </div>
+          <div style="padding: 12px 18px 14px; border-left: 1px solid rgba(22,24,26,0.28);">
+            <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #6E7370;">Players this week</div>
+            <div style="font-family: 'Bodoni Moda', Didot, serif; font-size: 30px; line-height: 1.1; margin-top: 2px;">{{ players }}</div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ firstToFinish }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 12px 18px 14px; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #6E7370;">First to finish this week</div>
+        </div>
+      </sc-if>
+
+      <div style="padding: 18px 18px 8px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #6E7370;">By category</div>
+        <div style="margin-top: 10px;">
+          <sc-for list="{{ cats }}" as="c" hint-placeholder-count="4">
+            <div style="display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0 12px; border-bottom: {{ c.sep }};">
+              <div style="font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; line-height: 1.2; text-wrap: pretty;">{{ c.name }}</div>
+              <div style="font-family: 'Bodoni Moda', Didot, serif; font-size: 20px; line-height: 1;">{{ c.score }}<span style="font-size: 12px; color: #6E7370;">/4</span></div>
+              <div style="grid-column: 1 / -1; height: 7px; border: 1px solid rgba(22,24,26,0.28); margin-top: 8px;">
+                <div style="height: 100%; width: {{ c.barWidth }}; background: #16181A;"></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="padding: 18px 18px 26px;">
+        <button onClick="{{ onCopy }}" style="width: 100%; border: 1px solid #16181A; padding: 13px 12px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">{{ copyLabel }}</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{ isIncomplete }}" hint-placeholder-val="{{ false }}">
+    <section style="margin-top: 64px; border-top: 3px double #16181A;">
+      <div style="padding: 24px 18px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #6E7370;">Editor's note</div>
+        <p style="margin: 12px 0 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; line-height: 1.4; text-wrap: pretty;">The score is set once every question is marked. {{ remainingSentence }}</p>
+        <button onClick="{{ onBackToFirst }}" style="margin-top: 18px; border: 1px solid #16181A; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">&uarr; Back to question {{ firstUnmarked }}</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <div style="padding: 20px 18px 40px; border-top: 1px solid rgba(22,24,26,0.28); text-align: center;">
+    <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #6E7370;">Next edition: Saturday 8 August</div>
+  </div>
+
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 60; background-color: #E6E8E5;">
+      <div style="position: sticky; top: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 46px; border-bottom: 3px double #16181A;">
+          <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;">The Quizz</span>
+          <button onClick="{{ toggleMenu }}" aria-label="Close" style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;">Close &times;</button>
+        </div>
+        <div style="padding: 34px 18px 0;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #B32718;">Contents</div>
+          <nav style="display: grid; margin-top: 18px; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A;">
+            <a href="#" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(22,24,26,0.28);">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">01</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">Home</span>
+            </a>
+            <a href="#" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(22,24,26,0.28);">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">02</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">Archive</span>
+            </a>
+            <a href="#" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">03</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">About</span>
+            </a>
+          </nav>
+          <div style="margin-top: 26px; padding-top: 14px; border-top: 3px double #16181A; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;">
+            <span>No. 47</span>
+            <span style="text-align: center; color: #6E7370;">1 August 2026</span>
+            <span>Saturday</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:860},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;top&quot;,&quot;boundary&quot;,&quot;menu&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview state&quot;},&quot;endState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;complete&quot;,&quot;firstToFinish&quot;,&quot;incomplete&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview state&quot;},&quot;answerRule&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tier3&quot;,&quot;full&quot;],&quot;default&quot;:&quot;tier3&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Rule system&quot;}}">
+const DATA = [
+  { name: "Extra Extra", questions: [
+    { text: "Which country hosted the 2026 Winter Olympic Games?", answer: "Italy", pct: 74 },
+    { text: "The Suez Canal connects the Mediterranean Sea to which other body of water?", answer: "The Red Sea", pct: 61 },
+    { text: "Which two countries share the longest international border in the world?", answer: "Canada and the United States", pct: 48 },
+    { text: "Which African country is entirely surrounded by South Africa?", answer: "Lesotho", pct: 39 }
+  ]},
+  { name: "Who Got Game?", questions: [
+    { text: "How many players from one team are on the field in a game of Australian rules football?", answer: "Eighteen", pct: 66 },
+    { text: "In tennis, what term is used for a score of forty\u2013forty?", answer: "Deuce", pct: 82 },
+    { text: "Which country has won the most FIFA World Cups?", answer: "Brazil", pct: 71 },
+    { text: "In cricket, what is a bowler said to have taken when three batters are dismissed with consecutive balls?", answer: "A hat-trick", pct: 52 }
+  ]},
+  { name: "Add One Letter", questions: [
+    { text: "Add one letter to HEAT to get a suit of playing cards.", answer: "Heart", pct: 79 },
+    { text: "Add one letter to PLANE to get a body orbiting a star.", answer: "Planet", pct: 84 },
+    { text: "Add one letter to CRATE to get a verb meaning to bring into existence.", answer: "Create", pct: 58 },
+    { text: "Add one letter to TROUT to get a company of touring performers.", answer: "Troupe", pct: 31 }
+  ]},
+  { name: "Famous Handles", questions: [
+    { text: "Which boxer fought under the name The Greatest?", answer: "Muhammad Ali", pct: 88 },
+    { text: "Which novelist first published under the pen name Currer Bell?", answer: "Charlotte Bront\u00eb", pct: 44 },
+    { text: "Which cricketer was known simply as The Don?", answer: "Donald Bradman", pct: 63 },
+    { text: "Which American city is nicknamed The Big Easy?", answer: "New Orleans", pct: 57 }
+  ]}
+];
+
+class Component extends DCLogic {
+  state = { revealed: {}, marks: {}, menuOpen: false };
+
+  componentDidMount() {
+    const view = this.props.view;
+    if (view === "menu") this.setState({ menuOpen: true });
+    if (view === "boundary") this.setState({ revealed: { 8: true }, marks: { 8: "correct", 2: "correct", 5: "correct" } });
+    const end = this.props.endState || "auto";
+    if (end === "complete" || end === "firstToFinish") {
+      const revealed = {}, marks = {};
+      const pattern = [1,1,0,1, 1,1,1,0, 1,0,1,1, 1,1,0,0];
+      pattern.forEach((v, i) => { revealed[i + 1] = true; marks[i + 1] = v ? "correct" : "wrong"; });
+      this.setState({ revealed: revealed, marks: marks });
+    }
+    if (end === "incomplete") {
+      const revealed = {}, marks = {};
+      for (let i = 1; i <= 12; i += 1) { revealed[i] = true; marks[i] = i % 4 === 0 ? "wrong" : "correct"; }
+      this.setState({ revealed: revealed, marks: marks });
+    }
+  }
+
+  scrollToQuestion(qid) {
+    const el = document.querySelector('[data-q-anchor="' + qid + '"]');
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 60, behavior: "smooth" });
+  }
+
+  pad(n) { return n < 10 ? "0" + n : String(n); }
+
+  // Tier 3 — list item separators only.
+  static T3 = "1px solid rgba(22,24,26,0.28)";
+
+  renderVals() {
+    const { revealed, marks } = this.state;
+    let id = 0;
+    const cats = DATA.map((c, ci) => {
+      const last = c.questions.length - 1;
+      const questions = c.questions.map((q, qi) => {
+        id += 1;
+        const qid = id;
+        const isRev = !!revealed[qid];
+        const mark = marks[qid] || null;
+        return {
+          id: qid,
+          num: this.pad(qid),
+          sep: qi === last ? "none" : Component.T3,
+          text: q.text,
+          answer: q.answer,
+          pct: q.pct,
+          hidden: !isRev,
+          revealed: isRev,
+          marked: !!mark,
+          tickBg: mark === "correct" ? "#16181A" : "transparent",
+          tickInk: mark === "correct" ? "#E6E8E5" : "#16181A",
+          crossBg: mark === "wrong" ? "#16181A" : "transparent",
+          crossInk: mark === "wrong" ? "#E6E8E5" : "#16181A",
+          onReveal: () => this.setState((s) => ({ revealed: Object.assign({}, s.revealed, { [qid]: true }) })),
+          onCorrect: () => this.setState((s) => ({ marks: Object.assign({}, s.marks, { [qid]: s.marks[qid] === "correct" ? null : "correct" }) })),
+          onWrong: () => this.setState((s) => ({ marks: Object.assign({}, s.marks, { [qid]: s.marks[qid] === "wrong" ? null : "wrong" }) }))
+        };
+      });
+      const catScore = questions.filter((q) => marks[q.id] === "correct").length;
+      return {
+        num: this.pad(ci + 1),
+        sep: ci === DATA.length - 1 ? "none" : Component.T3,
+        score: catScore,
+        barWidth: (catScore / 4) * 100 + "%",
+        name: c.name,
+        range: this.pad(ci * 4 + 1) + "\u2013" + this.pad(ci * 4 + 4),
+        questions: questions
+      };
+    });
+    const score = Object.keys(marks).filter((k) => marks[k] === "correct").length;
+    const markedCount = Object.keys(marks).filter((k) => marks[k]).length;
+    const complete = markedCount === 16;
+    const remaining = 16 - markedCount;
+    let firstUnmarked = 1;
+    for (let i = 1; i <= 16; i += 1) { if (!marks[i]) { firstUnmarked = i; break; } }
+    const firstToFinish = (this.props.endState || "auto") === "firstToFinish";
+    const answerRule = this.props.answerRule || "tier3";
+    return {
+      cats: cats,
+      answerTier3: answerRule === "tier3",
+      answerFull: answerRule === "full",
+      isComplete: complete,
+      isIncomplete: !complete,
+      firstToFinish: complete && firstToFinish,
+      showAverage: complete && !firstToFinish,
+      average: 8,
+      players: "1,204",
+      remainingSentence: remaining === 1 ? "One question is still unmarked." : remaining + " questions are still unmarked.",
+      firstUnmarked: this.pad(firstUnmarked),
+      copyLabel: this.state.copied ? "Copied to clipboard" : "Copy result to share",
+      onCopy: () => {
+        const text = "The Quizz No. 47 \u2014 " + score + "/16";
+        if (navigator.clipboard) navigator.clipboard.writeText(text);
+        this.setState({ copied: true });
+        setTimeout(() => this.setState({ copied: false }), 2000);
+      },
+      onBackToFirst: () => this.scrollToQuestion(firstUnmarked),
+      scoreLabel: this.pad(score),
+      menuOpen: this.state.menuOpen,
+      toggleMenu: () => this.setState((s) => ({ menuOpen: !s.menuOpen }))
+    };
+  }
+}
+</script>
+</body>
+</html>

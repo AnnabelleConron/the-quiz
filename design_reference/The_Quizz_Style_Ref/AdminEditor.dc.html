@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=DM+Mono:wght@400;500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; }
+  a { color: #16181A; text-decoration: none; }
+  a:hover { color: #B32718; }
+  button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+  /* Rule system — inherited from the public pages.
+     T1 zone boundary: 3px double #16181A  (also the destructive-button border)
+     T2 section boundary: 1px solid #16181A
+     T3 list separator / field resting border: 1px solid rgba(22,24,26,0.28)
+     Field states: resting T3 · filled 1px #16181A · focus 1px #B32718 · error 1px #B32718 */
+  .fld {
+    width: 100%; box-sizing: border-box; display: block;
+    font-family: 'Source Serif 4', Georgia, serif; font-size: 16.5px; line-height: 1.4;
+    color: #16181A; background: rgba(255,255,255,0.34);
+    border: 1px solid rgba(22,24,26,0.28); border-radius: 0;
+    padding: 10px 11px; outline: none; -webkit-appearance: none; appearance: none;
+  }
+  .fld.filled { border-color: #16181A; }
+  .fld:hover { border-color: #16181A; }
+  .fld:focus { border-color: #B32718; background: rgba(255,255,255,0.62); }
+  .fld.err { border-color: #B32718; background: rgba(179,39,24,0.05); }
+  .fld.mono { font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.04em; }
+  textarea.fld { resize: vertical; min-height: 74px; }
+  .fld::placeholder { color: #9AA09C; font-style: italic; }
+</style>
+</helmet>
+<div style="position: relative; min-height: 100%; background-color: #E6E8E5; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22 opacity=%220.09%22/%3E%3C/svg%3E'); color: #16181A; font-family: 'Source Serif 4', Georgia, serif; -webkit-font-smoothing: antialiased;">
+
+  <div style="position: sticky; top: 0; z-index: 30; background: #16181A; color: #E6E8E5;">
+    <div style="max-width: 860px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; height: 44px;">
+      <div style="display: flex; align-items: baseline; gap: 18px; min-width: 0;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; white-space: nowrap;">The Quizz</span>
+        <span style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #9AA09C; white-space: nowrap;">Editorial</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 14px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;">
+        <a href="AdminDashboard.dc.html" style="color: #E6E8E5; border-bottom: 1px solid #E6E8E5; padding-bottom: 2px;" style-hover="color: #E6E8E5;">Dashboard</a>
+        <a href="#" style="color: #9AA09C;" style-hover="color: #E6E8E5;">Analytics</a>
+        <a href="HomePage.dc.html" style="color: #9AA09C;" style-hover="color: #E6E8E5;">Site</a>
+        <a href="#" style="color: #9AA09C;" style-hover="color: #E6E8E5;">Sign out</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 860px; margin: 0 auto;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 24px 18px 14px; border-bottom: 3px double #16181A;">
+      <h1 style="margin: 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 46px; line-height: 0.9; letter-spacing: -0.02em;">Edition {{ editionNo }}</h1>
+      <span style="font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; padding: 3px 7px; border: 1px solid {{ statusBorder }}; background: {{ statusBg }}; color: {{ statusInk }}; margin-bottom: 4px;">{{ status }}</span>
+    </div>
+
+    <sc-if value="{{ showErrors }}" hint-placeholder-val="{{ false }}">
+      <div style="margin: 18px 18px 0; border: 1px solid #16181A; background-color: rgba(22,24,26,0.045);">
+        <div style="padding: 10px 14px; border-bottom: 1px solid rgba(22,24,26,0.28); font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #B32718;">Cannot schedule &mdash; 3 fields missing</div>
+        <div style="padding: 4px 14px 12px;">
+          <sc-for list="{{ missing }}" as="m" hint-placeholder-count="3">
+            <div style="display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: {{ m.sep }};">
+              <span style="font-size: 16px; line-height: 1.3;">{{ m.label }}</span>
+              <a href="#" style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #6E7370;" style-hover="color: #B32718;">Go &rarr;</a>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <section style="padding: 20px 18px 24px; border-bottom: 3px double #16181A;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #6E7370;">Edition details</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 14px;">
+        <div>
+          <label for="f-status" style="display: block; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E7370; margin-bottom: 6px;">Status</label>
+          <select id="f-status" class="fld mono filled">
+            <option>Draft</option>
+            <option>Scheduled</option>
+            <option>Published</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-when" style="display: block; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E7370; margin-bottom: 6px;">Publish &mdash; Sydney (AEST)</label>
+          <input id="f-when" type="datetime-local" value="2026-08-08T06:00" class="fld mono filled">
+        </div>
+      </div>
+      <div style="margin-top: 16px;">
+        <label for="f-title" style="display: block; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E7370; margin-bottom: 6px;">Title &mdash; optional</label>
+        <input id="f-title" type="text" value="{{ titleValue }}" placeholder="Left blank on most editions" class="{{ titleClass }}">
+      </div>
+    </section>
+
+    <sc-for list="{{ cats }}" as="c" hint-placeholder-count="4">
+      <section>
+        <div style="position: sticky; top: 44px; z-index: 10; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 18px 10px; background-color: #DEE0DD; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A;">
+          <span style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase;">Category {{ c.num }}</span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #6E7370;">Q{{ c.range }}</span>
+        </div>
+
+        <div style="padding: 16px 18px 4px;">
+          <label style="display: block; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: {{ c.nameLabelInk }}; margin-bottom: 6px;">Category name</label>
+          <input type="text" value="{{ c.name }}" placeholder="e.g. Add One Letter" class="{{ c.nameClass }}">
+          <sc-if value="{{ c.nameError }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #B32718;">Required before scheduling</div>
+          </sc-if>
+        </div>
+
+        <sc-for list="{{ c.questions }}" as="q" hint-placeholder-count="4">
+          <div style="padding: 16px 18px 18px; border-bottom: {{ q.sep }};">
+            <div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6E7370; padding-top: 20px;">{{ q.num }}</span>
+              <div>
+                <label style="display: block; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E7370; margin-bottom: 6px;">Question</label>
+                <textarea rows="2" value="{{ q.text }}" class="{{ q.qClass }}" placeholder="Write the question in full"></textarea>
+                <label style="display: block; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: {{ q.aLabelInk }}; margin: 12px 0 6px;">Answer</label>
+                <input type="text" value="{{ q.answer }}" placeholder="Short answer as printed" class="{{ q.aClass }}">
+                <sc-if value="{{ q.aError }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #B32718;">Required before scheduling</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+
+    <div style="border-top: 3px double #16181A;">
+      <sc-if value="{{ showSaved }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 11px 18px; border-bottom: 1px solid rgba(22,24,26,0.28); font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #6E7370;">Saved 10:42 AEST &mdash; all changes stored</div>
+      </sc-if>
+
+      <sc-if value="{{ confirming }}" hint-placeholder-val="{{ false }}">
+        <div style="margin: 18px 18px 0; border: 3px double #16181A; padding: 14px 16px 16px; background-color: rgba(22,24,26,0.045);">
+          <p style="margin: 0; font-size: 17.5px; line-height: 1.4; text-wrap: pretty;">Delete draft edition {{ editionNo }}? This cannot be undone.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px;">
+            <button onClick="{{ onConfirmDelete }}" style="border: 3px double #16181A; padding: 10px 15px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5; border-color: #16181A;">Delete permanently</button>
+            <button onClick="{{ onCancelDelete }}" style="border: 1px solid #16181A; padding: 10px 15px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">Keep draft</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 18px 18px 40px;">
+        <button onClick="{{ onSave }}" style="flex: 1 1 180px; background: #16181A; color: #E6E8E5; border: 1px solid #16181A; padding: 13px 18px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;" style-hover="background: #B32718; border-color: #B32718; color: #E6E8E5;">Save</button>
+        <sc-if value="{{ isDraft }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onSchedule }}" style="border: 1px solid #16181A; padding: 13px 16px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">Schedule</button>
+        </sc-if>
+        <a href="QuizPage.dc.html" style="border: 1px solid #16181A; padding: 13px 16px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">Preview</a>
+        <sc-if value="{{ isDraft }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onDelete }}" style="margin-left: auto; border: 3px double #16181A; padding: 12px 16px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E7370;" style-hover="background: #16181A; color: #E6E8E5; border-color: #16181A;">Delete draft</button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:860},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;filled&quot;,&quot;invalid&quot;,&quot;deleting&quot;,&quot;saved&quot;],&quot;default&quot;:&quot;filled&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Page state&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;draft&quot;,&quot;scheduled&quot;,&quot;published&quot;],&quot;default&quot;:&quot;draft&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Page state&quot;},&quot;edition&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:99,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Page state&quot;}}">
+const DATA = [
+  { name: "Extra Extra", questions: [
+    { q: "Which country hosted the 2026 Winter Olympic Games?", a: "Italy" },
+    { q: "The Suez Canal connects the Mediterranean Sea to which other body of water?", a: "The Red Sea" },
+    { q: "Which two countries share the longest international border in the world?", a: "Canada and the United States" },
+    { q: "Which African country is entirely surrounded by South Africa?", a: "Lesotho" }
+  ]},
+  { name: "Who Got Game?", questions: [
+    { q: "How many players from one team are on the field in a game of Australian rules football?", a: "Eighteen" },
+    { q: "In tennis, what term is used for a score of forty\u2013forty?", a: "Deuce" },
+    { q: "Which country has won the most FIFA World Cups?", a: "Brazil" },
+    { q: "In cricket, what is a bowler said to have taken when three batters are dismissed with consecutive balls?", a: "A hat-trick" }
+  ]},
+  { name: "Add One Letter", questions: [
+    { q: "Add one letter to HEAT to get a suit of playing cards.", a: "Heart" },
+    { q: "Add one letter to PLANE to get a body orbiting a star.", a: "Planet" },
+    { q: "Add one letter to CRATE to get a verb meaning to bring into existence.", a: "Create" },
+    { q: "Add one letter to TROUT to get a company of touring performers.", a: "Troupe" }
+  ]},
+  { name: "Famous Handles", questions: [
+    { q: "Which boxer fought under the name The Greatest?", a: "Muhammad Ali" },
+    { q: "Which novelist first published under the pen name Currer Bell?", a: "Charlotte Bront\u00eb" },
+    { q: "Which cricketer was known simply as The Don?", a: "Donald Bradman" },
+    { q: "Which American city is nicknamed The Big Easy?", a: "New Orleans" }
+  ]}
+];
+
+class Component extends DCLogic {
+  state = { confirming: null, saved: null };
+
+  pad(n) { return n < 10 ? "0" + n : String(n); }
+
+  renderVals() {
+    const T3 = "1px solid rgba(22,24,26,0.28)";
+    const view = this.props.view || "filled";
+    const invalid = view === "invalid";
+    const status = this.props.status || "draft";
+
+    // Missing in the invalid state: category 2 name, question 7 answer, question 14 answer.
+    const blankCatName = invalid ? 2 : 0;
+    const blankAnswers = invalid ? [7, 14] : [];
+
+    let id = 0;
+    const cats = DATA.map((c, ci) => {
+      const catNo = ci + 1;
+      const nameBlank = catNo === blankCatName;
+      const last = c.questions.length - 1;
+      const questions = c.questions.map((q, qi) => {
+        id += 1;
+        const qid = id;
+        const aBlank = blankAnswers.indexOf(qid) !== -1;
+        return {
+          num: this.pad(qid),
+          text: q.q,
+          answer: aBlank ? "" : q.a,
+          qClass: "fld filled",
+          aClass: aBlank ? "fld err" : "fld filled",
+          aError: aBlank,
+          aLabelInk: aBlank ? "#B32718" : "#6E7370",
+          sep: qi === last ? "none" : T3
+        };
+      });
+      return {
+        num: this.pad(catNo),
+        range: this.pad(ci * 4 + 1) + "\u2013" + this.pad(ci * 4 + 4),
+        name: nameBlank ? "" : c.name,
+        nameClass: nameBlank ? "fld err" : "fld filled",
+        nameError: nameBlank,
+        nameLabelInk: nameBlank ? "#B32718" : "#6E7370",
+        questions: questions
+      };
+    });
+
+    const statusStyle = status === "published"
+      ? { statusBg: "#16181A", statusInk: "#E6E8E5", statusBorder: "#16181A" }
+      : status === "scheduled"
+        ? { statusBg: "transparent", statusInk: "#16181A", statusBorder: "#16181A" }
+        : { statusBg: "transparent", statusInk: "#6E7370", statusBorder: "rgba(22,24,26,0.28)" };
+
+    const missingRaw = ["Category 2 name", "Question 7 answer", "Question 14 answer"];
+    const missing = missingRaw.map((label, i) => ({
+      label: label,
+      sep: i === missingRaw.length - 1 ? "none" : T3
+    }));
+
+    const confirming = this.state.confirming !== null ? this.state.confirming : view === "deleting";
+    const saved = this.state.saved !== null ? this.state.saved : view === "saved";
+
+    return Object.assign({
+      editionNo: this.pad(this.props.edition ?? 3),
+      status: status,
+      cats: cats,
+      isDraft: status === "draft",
+      showErrors: invalid,
+      missing: missing,
+      confirming: confirming,
+      showSaved: saved,
+      titleValue: invalid ? "" : "The Long Weekend Edition",
+      titleClass: invalid ? "fld" : "fld filled",
+      onSave: () => { this.setState({ saved: true }); setTimeout(() => this.setState({ saved: false }), 4000); },
+      onSchedule: () => {},
+      onDelete: () => this.setState({ confirming: true }),
+      onCancelDelete: () => this.setState({ confirming: false }),
+      onConfirmDelete: () => this.setState({ confirming: false })
+    }, statusStyle);
+  }
+}
+</script>
+</body>
+</html>

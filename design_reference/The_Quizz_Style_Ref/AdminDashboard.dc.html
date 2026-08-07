@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=DM+Mono:wght@400;500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; }
+  a { color: #16181A; text-decoration: none; }
+  a:hover { color: #B32718; }
+  button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+  /* Rule system — inherited from the public pages.
+     T1 zone boundary: 3px double #16181A  (also the destructive-button border)
+     T2 section boundary: 1px solid #16181A
+     T3 list separator / field resting border: 1px solid rgba(22,24,26,0.28) */
+</style>
+</helmet>
+<div style="position: relative; min-height: 100%; background-color: #E6E8E5; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22 opacity=%220.09%22/%3E%3C/svg%3E'); color: #16181A; font-family: 'Source Serif 4', Georgia, serif; -webkit-font-smoothing: antialiased;">
+
+  <div style="position: sticky; top: 0; z-index: 30; background: #16181A; color: #E6E8E5;">
+    <div style="max-width: 980px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; height: 44px;">
+      <div style="display: flex; align-items: baseline; gap: 18px; min-width: 0;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; white-space: nowrap;">The Quizz</span>
+        <span style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #9AA09C; white-space: nowrap;">Editorial</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 14px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;">
+        <a href="#" style="color: #E6E8E5; border-bottom: 1px solid #E6E8E5; padding-bottom: 2px;" style-hover="color: #E6E8E5;">Dashboard</a>
+        <a href="#" style="color: #9AA09C;" style-hover="color: #E6E8E5;">Analytics</a>
+        <a href="HomePage.dc.html" style="color: #9AA09C;" style-hover="color: #E6E8E5;">Site</a>
+        <a href="#" style="color: #9AA09C;" style-hover="color: #E6E8E5;">Sign out</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 980px; margin: 0 auto;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 26px 18px 16px; border-bottom: 3px double #16181A;">
+      <h1 style="margin: 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 46px; line-height: 0.9; letter-spacing: -0.02em;">Quizzes</h1>
+      <a href="AdminEditor.dc.html" style="background: #16181A; color: #E6E8E5; border: 1px solid #16181A; padding: 12px 18px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;" style-hover="background: #B32718; border-color: #B32718; color: #E6E8E5;">New quiz</a>
+    </div>
+
+    <sc-if value="{{ hasSaved }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 10px 18px; border-bottom: 1px solid rgba(22,24,26,0.28); font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #6E7370;">Saved 10:42 AEST</div>
+    </sc-if>
+
+    <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: 56px 1fr 92px; gap: 6px 12px; padding: 9px 18px; border-bottom: 1px solid #16181A; font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E7370;">
+        <span>No.</span>
+        <span>Title</span>
+        <span>Status</span>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+        <div style="display: grid; grid-template-columns: 56px 1fr 92px; align-items: baseline; gap: 6px 12px; padding: 14px 18px 15px; border-bottom: {{ r.sep }};">
+          <span style="font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.06em;">{{ r.num }}</span>
+          <span style="font-size: 16.5px; line-height: 1.3; color: {{ r.titleInk }}; text-wrap: pretty;">{{ r.title }}</span>
+          <span style="justify-self: start; font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; padding: 3px 7px; border: 1px solid {{ r.statusBorder }}; background: {{ r.statusBg }}; color: {{ r.statusInk }};">{{ r.status }}</span>
+          <span style="grid-column: 2 / -1; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #6E7370; margin-top: 6px;">{{ r.date }}</span>
+          <div style="grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+            <a href="AdminEditor.dc.html" style="border: 1px solid #16181A; padding: 7px 11px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">Edit</a>
+            <a href="QuizPage.dc.html" style="border: 1px solid #16181A; padding: 7px 11px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">Preview</a>
+            <a href="#" style="border: 1px solid #16181A; padding: 7px 11px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;" style-hover="background: #16181A; color: #E6E8E5;">Analytics</a>
+          </div>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 54px 18px 60px; border-bottom: 1px solid rgba(22,24,26,0.28); background-color: rgba(22,24,26,0.045);">
+        <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #6E7370;">No quizzes yet</div>
+        <p style="margin: 12px 0 0; max-width: 42ch; font-size: 18px; line-height: 1.45; text-wrap: pretty;">Nothing has been written yet. The first edition will be No. 01, and it publishes the Saturday morning after it is scheduled.</p>
+        <a href="AdminEditor.dc.html" style="display: inline-block; margin-top: 20px; background: #16181A; color: #E6E8E5; border: 1px solid #16181A; padding: 12px 18px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;" style-hover="background: #B32718; border-color: #B32718; color: #E6E8E5;">Write edition 01</a>
+      </div>
+    </sc-if>
+
+    <div style="padding: 18px 18px 40px; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #6E7370;">All times Sydney (AEST)</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:860},&quot;dataset&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;full&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;full&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Page state&quot;},&quot;showSaved&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Page state&quot;}}">
+const ROWS = [
+  { n: 47, title: "\u2014", status: "draft", date: "Sat 8 Aug 2026, 06:00" },
+  { n: 46, title: "The Long Weekend Edition", status: "scheduled", date: "Sat 1 Aug 2026, 06:00" },
+  { n: 45, title: "\u2014", status: "published", date: "Sat 25 Jul 2026, 06:00" },
+  { n: 44, title: "Winter Sports Special", status: "published", date: "Sat 18 Jul 2026, 06:00" },
+  { n: 43, title: "\u2014", status: "published", date: "Sat 11 Jul 2026, 06:00" },
+  { n: 42, title: "The Anniversary Edition", status: "published", date: "Sat 4 Jul 2026, 06:00" }
+];
+
+class Component extends DCLogic {
+  pad(n) { return n < 10 ? "0" + n : String(n); }
+
+  statusStyle(s) {
+    if (s === "published") return { statusBg: "#16181A", statusInk: "#E6E8E5", statusBorder: "#16181A" };
+    if (s === "scheduled") return { statusBg: "transparent", statusInk: "#16181A", statusBorder: "#16181A" };
+    return { statusBg: "transparent", statusInk: "#6E7370", statusBorder: "rgba(22,24,26,0.28)" };
+  }
+
+  renderVals() {
+    const T3 = "1px solid rgba(22,24,26,0.28)";
+    const empty = (this.props.dataset || "full") === "empty";
+    const rows = empty ? [] : ROWS.map((r, i) => Object.assign({
+      num: this.pad(r.n),
+      title: r.title,
+      titleInk: r.title === "\u2014" ? "#6E7370" : "#16181A",
+      status: r.status,
+      date: r.date,
+      sep: i === ROWS.length - 1 ? "1px solid #16181A" : T3
+    }, this.statusStyle(r.status)));
+
+    return {
+      rows: rows,
+      hasRows: !empty,
+      isEmpty: empty,
+      hasSaved: !!this.props.showSaved
+    };
+  }
+}
+</script>
+</body>
+</html>

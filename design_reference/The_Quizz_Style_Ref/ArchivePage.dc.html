@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400&family=DM+Mono:wght@400&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; }
+  a { color: #16181A; text-decoration: none; }
+  a:hover { color: #B32718; }
+  button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+  /* Rule system — inherited from QuizPage.
+     T1 zone boundary: 3px double #16181A
+     T2 section boundary: 1px solid #16181A
+     T3 list separator / strike: 1px solid rgba(22,24,26,0.28)
+     Component borders (buttons, filter cells) are closed shapes: 1px solid #16181A */
+</style>
+</helmet>
+<div style="position: relative; min-height: 100%; background-color: #E6E8E5; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22 opacity=%220.09%22/%3E%3C/svg%3E'); color: #16181A; font-family: 'Source Serif 4', Georgia, serif; -webkit-font-smoothing: antialiased;">
+
+  <div style="position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 46px; background-color: #E6E8E5; border-bottom: 3px double #16181A;">
+    <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;">The Quizz</span>
+    <button onClick="{{ toggleMenu }}" aria-label="Menu" style="display: flex; flex-direction: column; gap: 4px; width: 22px; padding: 8px 0;">
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+    </button>
+  </div>
+
+  <div style="max-width: 900px; margin: 0 auto;">
+    <div style="padding: 30px 18px 22px; text-align: center; border-bottom: 1px solid rgba(22,24,26,0.28);">
+      <h1 style="margin: 8px 0 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 62px; line-height: 0.92; letter-spacing: -0.02em;">The Archive</h1>
+    </div>
+
+    <div style="padding: 9px 18px; border-bottom: 3px double #16181A; font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;">{{ countLabel }}</div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #16181A;">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+        <button onClick="{{ f.onClick }}" style="padding: 11px 6px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; border-left: {{ f.divider }}; background: {{ f.bg }}; color: {{ f.ink }};">{{ f.label }}</button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+      <a href="QuizPage.dc.html" style="position: relative; display: grid; grid-template-columns: 62px 1fr; align-items: center; gap: 12px; padding: 15px 18px 16px; border-bottom: {{ r.sep }}; color: {{ r.ink }};" style-hover="background: rgba(22,24,26,0.045);">
+        <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 30px; line-height: 1; letter-spacing: -0.02em;">{{ r.num }}</span>
+        <span style="display: block; overflow: hidden; white-space: nowrap; font-size: 15.5px; line-height: 1.3; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 46px), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 46px), transparent 100%);">{{ r.cats }}</span>
+        <sc-if value="{{ r.done }}" hint-placeholder-val="{{ false }}">
+          <span style="position: absolute; left: 18px; right: 18px; top: 50%; height: 1px; background: rgba(22,24,26,0.28);"></span>
+        </sc-if>
+      </a>
+    </sc-for>
+
+    <div style="padding: 20px 18px 40px; border-top: 1px solid rgba(22,24,26,0.28); text-align: center;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #6E7370;">Next edition: Saturday 8 August</div>
+    </div>
+  </div>
+
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 60; background-color: #E6E8E5;">
+      <div style="position: sticky; top: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 46px; border-bottom: 3px double #16181A;">
+          <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;">The Quizz</span>
+          <button onClick="{{ toggleMenu }}" aria-label="Close" style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;">Close &times;</button>
+        </div>
+        <div style="max-width: 900px; margin: 0 auto; padding: 34px 18px 0;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #B32718;">Contents</div>
+          <nav style="display: grid; margin-top: 18px; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A;">
+            <a href="HomePage.dc.html" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(22,24,26,0.28);">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">01</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">Home</span>
+            </a>
+            <a href="#" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(22,24,26,0.28);">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">02</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">Archive</span>
+            </a>
+            <a href="#" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">03</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">About</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:860},&quot;dataset&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;full&quot;,&quot;launch&quot;],&quot;default&quot;:&quot;full&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Page state&quot;},&quot;filter&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;newest&quot;,&quot;oldest&quot;,&quot;uncompleted&quot;],&quot;default&quot;:&quot;newest&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Page state&quot;}}">
+const POOL = [
+  ["Extra Extra", "Who Got Game?", "Add One Letter", "Famous Handles"],
+  ["Capital Ideas", "Screen Tests", "Drop A Letter", "Number Crunching"],
+  ["Chart Toppers", "Ancient History", "Hidden Words", "On The Map"],
+  ["First Editions", "Track And Field", "Change One Letter", "Stage Names"],
+  ["Small Print", "Kitchen Table", "Anagram Hour", "Two Of A Kind"],
+  ["Front Pages", "Long Distance", "Word Ladders", "Also Known As"],
+  ["Late Editions", "Home Ground", "Missing Letters", "Household Names"],
+  ["Local Colour", "Silver Screen", "Spell It Out", "Pen Names"],
+  ["Weather Report", "Grand Slams", "Odd One Out", "Double Acts"],
+  ["Back Pages", "Field Notes", "Take One Away", "Nicknames"]
+];
+const DONE = { 47: false, 46: true, 45: true, 44: false, 43: true, 42: false, 41: false, 40: true, 39: true, 38: false };
+
+class Component extends DCLogic {
+  state = { filter: null };
+
+  pad(n) { return n < 10 ? "0" + n : String(n); }
+
+  renderVals() {
+    const T3 = "1px solid rgba(22,24,26,0.28)";
+    const launch = (this.props.dataset || "full") === "launch";
+    const filter = this.state.filter || this.props.filter || "newest";
+
+    let editions = [];
+    if (launch) {
+      editions = [
+        { n: 2, cats: POOL[0], done: false },
+        { n: 1, cats: POOL[1], done: true }
+      ];
+    } else {
+      for (let i = 0; i < 10; i += 1) {
+        const n = 47 - i;
+        editions.push({ n: n, cats: POOL[i], done: !!DONE[n] });
+      }
+    }
+
+    let list = editions.slice();
+    if (filter === "oldest") list.sort((a, b) => a.n - b.n);
+    else if (filter === "newest") list.sort((a, b) => b.n - a.n);
+    else list.sort((a, b) => (a.done === b.done ? b.n - a.n : (a.done ? 1 : -1)));
+
+    const rows = list.map((e, i) => ({
+      num: this.pad(e.n),
+      cats: e.cats.join("  \u00b7  "),
+      done: e.done,
+      ink: e.done ? "#6E7370" : "#16181A",
+      sep: i === list.length - 1 ? "1px solid #16181A" : T3
+    }));
+
+    const defs = [["newest", "Newest"], ["oldest", "Oldest"], ["uncompleted", "Uncompleted"]];
+    const filters = defs.map(([key, label], i) => ({
+      label: label,
+      bg: filter === key ? "#16181A" : "transparent",
+      ink: filter === key ? "#E6E8E5" : "#6E7370",
+      divider: i === 0 ? "none" : T3,
+      onClick: () => this.setState({ filter: key })
+    }));
+
+    const total = editions.length;
+    return {
+      rows: rows,
+      filters: filters,
+      countLabel: total + (total === 1 ? " quiz" : " quizzes"),
+      menuOpen: this.state.menuOpen,
+      toggleMenu: () => this.setState((s) => ({ menuOpen: !s.menuOpen }))
+    };
+  }
+}
+</script>
+</body>
+</html>

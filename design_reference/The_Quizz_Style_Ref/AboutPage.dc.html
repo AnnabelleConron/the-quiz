@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400&family=DM+Mono:wght@400&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Source+Serif+4:opsz,wght@8..60,400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; }
+  a { color: #16181A; text-decoration: none; }
+  a:hover { color: #B32718; }
+  button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+  /* Rule system — inherited from QuizPage.
+     T1 zone boundary: 3px double #16181A
+     T2 section boundary: 1px solid #16181A
+     T3 list separator: 1px solid rgba(22,24,26,0.28)
+     Component borders (buttons) are closed shapes: 1px solid #16181A */
+</style>
+</helmet>
+<div style="position: relative; min-height: 100%; background-color: #E6E8E5; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22 opacity=%220.09%22/%3E%3C/svg%3E'); color: #16181A; font-family: 'Source Serif 4', Georgia, serif; -webkit-font-smoothing: antialiased;">
+
+  <div style="position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 46px; background-color: #E6E8E5; border-bottom: 3px double #16181A;">
+    <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;">The Quizz</span>
+    <button onClick="{{ toggleMenu }}" aria-label="Menu" style="display: flex; flex-direction: column; gap: 4px; width: 22px; padding: 8px 0;">
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+      <span style="display: block; height: 1px; background: #16181A;"></span>
+    </button>
+  </div>
+
+  <div style="max-width: 640px; margin: 0 auto;">
+    <div style="padding: clamp(30px, 6vw, 68px) 18px clamp(22px, 4vw, 44px); text-align: center; border-bottom: 3px double #16181A;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.34em; text-transform: uppercase; color: #6E7370;">The Quizz</div>
+      <h1 style="margin: 8px 0 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: clamp(62px, 14vw, 108px); line-height: 0.92; letter-spacing: -0.02em;">About</h1>
+    </div>
+
+    <section style="padding: clamp(40px, 8vw, 88px) 18px clamp(44px, 9vw, 96px);">
+      <h2 style="margin: 0; font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: clamp(40px, 8.5vw, 62px); line-height: 1.0; letter-spacing: -0.02em; text-wrap: pretty;">One quiz, once a week</h2>
+      <p style="margin: 22px 0 0; padding-top: 20px; border-top: 1px solid rgba(22,24,26,0.28); font-size: clamp(18px, 2.4vw, 21px); line-height: 1.5; text-wrap: pretty;">{{ body }}</p>
+    </section>
+
+    <div style="padding: 20px 18px 40px; border-top: 1px solid rgba(22,24,26,0.28); text-align: center;">
+      <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #6E7370;">Next edition: Saturday 8 August</div>
+    </div>
+  </div>
+
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 60; background-color: #E6E8E5;">
+      <div style="position: sticky; top: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 46px; border-bottom: 3px double #16181A;">
+          <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;">The Quizz</span>
+          <button onClick="{{ toggleMenu }}" aria-label="Close" style="font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;">Close &times;</button>
+        </div>
+        <div style="max-width: 640px; margin: 0 auto; padding: 34px 18px 0;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #B32718;">Contents</div>
+          <nav style="display: grid; margin-top: 18px; border-top: 1px solid #16181A; border-bottom: 1px solid #16181A;">
+            <a href="HomePage.dc.html" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(22,24,26,0.28);">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">01</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">Home</span>
+            </a>
+            <a href="ArchivePage.dc.html" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid rgba(22,24,26,0.28);">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">02</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">Archive</span>
+            </a>
+            <a href="#" style="display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; padding: 16px 0;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 9px; color: #6E7370;">03</span>
+              <span style="font-family: 'Bodoni Moda', Didot, serif; font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em;">About</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:860},&quot;copy&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;asWritten&quot;,&quot;expanded&quot;],&quot;default&quot;:&quot;asWritten&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Page state&quot;}}">
+const AS_WRITTEN = "One quiz, once a week. The Quizz is written by hand and published every Saturday morning. Four categories, sixteen questions, meant to be played out loud with one phone passed around a table. No accounts, no sign-in, nothing to install.";
+
+const EXPANDED = "The Quizz is written by hand and published every Saturday morning. Four categories, sixteen questions, meant to be played out loud with one phone passed around a table. The questions are set to be argued over rather than looked up, and the answers print upside down at the foot of each one, the way they do in a newspaper. There are no accounts and nothing to install; whatever you mark is kept on your own device.";
+
+class Component extends DCLogic {
+  state = { menuOpen: false };
+  renderVals() {
+    return {
+      body: (this.props.copy || "asWritten") === "expanded" ? EXPANDED : AS_WRITTEN,
+      menuOpen: this.state.menuOpen,
+      toggleMenu: () => this.setState((s) => ({ menuOpen: !s.menuOpen }))
+    };
+  }
+}
+</script>
+</body>
+</html>
