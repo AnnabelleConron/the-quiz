@@ -161,7 +161,10 @@
 
 /* --- Status chips -----------------------------------------------------
 
-   Published is filled, scheduled is edged, a draft is quiet. */
+   Live is filled, scheduled is edged, a draft is quiet, and a withdrawn
+   edition takes the accent: the one exception state on the screen. The word
+   is derived from status and date by editionState(), not read off the
+   column, because nothing promotes 'scheduled' to 'published'. */
 
 .status {
   display: inline-block;
@@ -175,7 +178,7 @@
   white-space: nowrap;
 }
 
-.status-published {
+.status-live {
   background: var(--ink);
   color: var(--paper-on-ink);
 }
@@ -189,6 +192,12 @@
   background: transparent;
   color: var(--grey);
   border: var(--rule-item);
+}
+
+.status-unpublished {
+  background: transparent;
+  color: var(--accent);
+  border: var(--rule-accent);
 }
 
 /* --- Dashboard --------------------------------------------------------

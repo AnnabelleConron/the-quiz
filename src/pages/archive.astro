@@ -133,14 +133,16 @@ import SiteTop from '../components/SiteTop.astro';
       }
 
       parts.push(list);
-      parts.push(
-        el('footer', { class: 'site-footer' }, [
-          el('p', {
-            class: 'label muted',
-            text: 'Next edition: ' + formatNextEdition(editions[0].publishAt),
-          }),
-        ])
-      );
+      // Dropped once its date has gone, which happens when the newest
+      // edition is withheld and the list falls back to an older one.
+      const next = formatNextEdition(editions[0].publishAt);
+      if (next) {
+        parts.push(
+          el('footer', { class: 'site-footer' }, [
+            el('p', { class: 'label muted', text: 'Next edition: ' + next }),
+          ])
+        );
+      }
 
       root.replaceChildren(...parts);
     } catch (err) {

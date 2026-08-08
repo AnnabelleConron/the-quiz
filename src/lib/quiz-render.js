@@ -66,8 +66,14 @@ export function formatDateline(iso) {
 // The standing promise on the footer of every page that knows a date.
 // Editions publish weekly on Saturday mornings, so the next one is seven
 // days on from the one in hand.
+//
+// Returns null once that date has passed, which happens whenever the newest
+// edition is withheld and the page falls back to an older one. Promising a
+// Saturday that has already gone is worse than saying nothing, so the
+// callers drop the line.
 export function formatNextEdition(iso) {
   const next = new Date(new Date(iso).getTime() + 7 * 86400 * 1000);
+  if (next.getTime() <= Date.now()) return null;
   return next.toLocaleDateString('en-AU', {
     timeZone: 'Australia/Sydney',
     weekday: 'long',
@@ -206,7 +212,16 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     quiz = await fetchQuizByEdition(edition);
   }
   if (!quiz) {
-    root.replaceChildren(el('p', { text: 'Edition ' + edition + ' is not available.' }));
+    // Reached by a link to an edition that was withdrawn, one that has not
+    // gone out yet, and one that never existed. The page cannot tell them
+    // apart, so the wording stays neutral and offers a way on.
+    root.replaceChildren(
+      el('p', { class: 'load-error' }, [
+        document.createTextNode('Edition ' + edition + ' is not available. Find every edition in '),
+        el('a', { href: '/archive', text: 'the archive' }),
+        document.createTextNode('.'),
+      ])
+    );
     return;
   }
 
@@ -453,6 +468,19 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   // Submission cannot be retried by scrolling again, so a failure needs its
   // own way back. The reference has no failure state; this is ours.
   function buildSubmitError() {
+    // An edition withdrawn mid-play is a dead end: submit_quiz refuses it and
+    // no amount of retrying will change that, so say so and offer no button.
+    if (submitWithdrawn) {
+      return el('section', { class: 'endnote', role: 'alert' }, [
+        el('p', { class: 'label muted', text: "Editor's note" }),
+        el('p', {
+          class: 'endnote-text',
+          text:
+            'This edition has been taken off the site, so the score could not be recorded. ' +
+            'Your marks are still here on this device.',
+        }),
+      ]);
+    }
     const retry = el('button', { type: 'button', class: 'endnote-back', text: 'Try again' });
     retry.addEventListener('click', () => {
       submitting = false;
@@ -472,6 +500,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
 
   let submitting = false;
   let submitFailed = false;
+  let submitWithdrawn = false;
   let stopWatching = null;
 
   function renderEnd() {
@@ -539,8 +568,13 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       }
       submitting = false;
       submitFailed = true;
+      // submit_quiz raises this when the edition is no longer visible, which
+      // means it was withdrawn while this group was playing.
+      submitWithdrawn = /not available/i.test(error.message);
       renderEnd();
-      statusLine.textContent = 'The score could not be sent.';
+      statusLine.textContent = submitWithdrawn
+        ? 'This edition has been taken off the site, so the score could not be recorded.'
+        : 'The score could not be sent.';
       return;
     }
 

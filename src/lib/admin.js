@@ -1,10 +1,29 @@
-// Shared admin helpers: auth gate, Sydney time handling, data access.
+// Shared admin helpers: auth gate, publish-time handling, data access.
 // Admin pages render nothing until the session check completes.
 
 import { supabase } from './supabase.js';
 import { el } from './quiz-render.js';
 
+// The quiz is Melbourne based. Melbourne and Sydney share identical offsets
+// and daylight-saving rules, so the IANA zone below is the same clock either
+// way; only the label the reader sees differs.
 const SYDNEY_TZ = 'Australia/Sydney';
+
+// How that clock is named in the interface, for the instant in question:
+// AEST through winter, AEDT from early October to early April. Read out of
+// the zone itself rather than hardcoded, so it stays correct through any
+// future change to the daylight-saving rules.
+//
+// Every user-facing time on the site is labelled through this.
+export function timeLabel(when = new Date()) {
+  const date = when instanceof Date ? when : new Date(when);
+  const parts = new Intl.DateTimeFormat('en-AU', {
+    timeZone: SYDNEY_TZ,
+    timeZoneName: 'short',
+  }).formatToParts(date);
+  const name = parts.find((part) => part.type === 'timeZoneName');
+  return name ? name.value : 'AEST';
+}
 
 export async function getSession() {
   const { data } = await supabase.auth.getSession();
@@ -29,8 +48,31 @@ export function field(labelText, control, modifier) {
   ]);
 }
 
-export function statusChip(status) {
-  return el('span', { class: 'status status-' + status, text: status });
+// Whether an edition's publish time has arrived. An instant comparison, not
+// a wall-clock one: publish_at is a UTC ISO string and Date parses it to an
+// absolute moment. The Sydney helpers further down this file exist to read
+// and write wall-clock text in the editor, and would be the wrong tool here.
+export function isPast(iso) {
+  return new Date(iso).getTime() <= Date.now();
+}
+
+// What an edition is, as a reader would describe it, rather than as the
+// column spells it. Nothing in the app promotes 'scheduled' to 'published',
+// so a scheduled edition whose morning has passed is simply live.
+//
+// Advisory only: this decides which controls to draw, on the client's clock.
+// The database is the authority, and enforce_quiz_status_transition() refuses
+// anything this gets wrong.
+export function editionState(quiz) {
+  if (quiz.status === 'draft') return 'draft';
+  if (quiz.status === 'unpublished') return 'unpublished';
+  if (quiz.status === 'published') return 'live';
+  return isPast(quiz.publish_at) ? 'live' : 'scheduled';
+}
+
+export function statusChip(quiz) {
+  const state = editionState(quiz);
+  return el('span', { class: 'status status-' + state, text: state });
 }
 
 export function renderLogin(root) {
@@ -182,9 +224,12 @@ export function parseSydneyInput(value) {
   return utcForSydney(Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4]), Number(m[5]));
 }
 
+// Labelled for its own instant, so an edition published in January reads
+// AEDT while one published in July reads AEST.
 export function formatSydney(iso) {
+  const date = new Date(iso);
   return (
-    new Date(iso).toLocaleString('en-AU', {
+    date.toLocaleString('en-AU', {
       timeZone: SYDNEY_TZ,
       weekday: 'short',
       day: 'numeric',
@@ -193,6 +238,8 @@ export function formatSydney(iso) {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
-    }) + ' Sydney time'
+    }) +
+    ' ' +
+    timeLabel(date)
   );
 }

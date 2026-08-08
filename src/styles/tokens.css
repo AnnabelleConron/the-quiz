@@ -82,6 +82,10 @@
   /* The same section rule drawn on the ink ground of the admin bar. */
   --rule-section-inverse: 1px solid var(--paper-on-ink);
 
+  /* An edge that marks an exception rather than a division. Used only by
+     the withdrawn status chip in the admin. */
+  --rule-accent: 1px solid var(--accent);
+
   /* --- Type -----------------------------------------------------------
 
      Three families, three jobs, no overlap.

@@ -98,20 +98,48 @@ The schema, functions, RLS policies, and grants live in `supabase/migrations/` a
 
 Key properties:
 
-- Anonymous visitors can read only published quizzes (or scheduled ones whose publish time has passed). Drafts are not retrievable in any way.
+- Anonymous visitors can read only published quizzes (or scheduled ones whose publish time has passed). Drafts and withdrawn editions are not retrievable in any way.
 - The public client cannot read or write raw response rows. Submissions go through the `submit_quiz` function, which validates the marks, computes the score server side, and inserts everything in one transaction, once per device per quiz.
 - Stats come from `get_question_stats`, `get_quiz_stats`, and `get_archive_stats`.
-- A trigger blocks scheduling or publishing a quiz unless it has exactly 4 named categories and 16 complete questions, and blocks deleting content from a live quiz. Deleting a whole quiz cascades cleanly at any status.
+- A trigger blocks scheduling or publishing a quiz unless it has exactly 4 named categories and 16 complete questions, and blocks deleting content from anything that is not a draft. Deleting a whole quiz cascades cleanly at any status.
+- A trigger blocks returning an edition to `draft` once it has gone out or has recorded scores. Withdrawing is the way back from live, and it keeps the content guard on.
 
 ## Admin
 
 The CMS is at `/admin`: dashboard, quiz editor with a completeness check, public-identical preview, and analytics. There is no signup flow.
 
+### The life of an edition
+
+The `status` column holds four values, but the admin shows a **derived** state, because nothing in the app ever promotes `scheduled` to `published`: an edition goes live when its date passes. `editionState()` in `src/lib/admin.js` is the one place that derivation lives.
+
+| Shown | Status and date | Public | Controls |
+| --- | --- | --- | --- |
+| `draft` | `draft` | no | Schedule, Delete draft |
+| `scheduled` | `scheduled`, date ahead | no | Unschedule, Delete edition |
+| `live` | `published`, or `scheduled` with the date passed | yes | Unpublish, Delete edition |
+| `unpublished` | `unpublished` | no | Republish, Delete edition |
+
+Withdrawing takes an edition off the site: gone from home, gone from the archive, and its permalink says it is not available. Nothing is destroyed. Responses and completions stay exactly as they were and come back if it is republished, and the content guard stays on, so its questions cannot be deleted while it is withdrawn.
+
+**`publish_at` stays editable while an edition is withdrawn, and Republish honours it.** A date in the past puts the edition straight back on the site. A date in the future requeues it, which is how an edition is postponed rather than restored; the editor says which of the two happened. Only that distinction stops a nudged date from silently leaving an edition dark.
+
+**Delete is the opposite of withdrawing, and it is available in every state.** It removes the quiz, its questions and answers, every mark and every recorded score, in one cascade. There is no undo and no backup, so the confirmation reads the real counts first and names them: "Delete edition 07 permanently? This removes the quiz, its sixteen questions and answers, 312 recorded scores and 4,992 marks." On a live edition it opens by saying the edition is on the site now. A draft has nothing recorded against it and keeps its original short wording.
+
+The status is re-read at the moment you press Delete, not taken from what the page loaded, so an edition that went live while the tab sat open says so before you confirm.
+
+Deleting the newest edition frees its number: `createQuiz` takes `max(edition_number) + 1`, so the next quiz written reuses it. That is what you want after publishing something by mistake, but it does mean an old link to the deleted edition will eventually resolve to its replacement.
+
+Unschedule only exists before the date arrives, because an edition that was never visible cannot have been played. Once one has gone out, the way back is Unpublish, and the database refuses the other route: returning a live edition or one with recorded scores to `draft` would release the guard on content that real responses point at.
+
 To create the two admin accounts: Supabase Dashboard, Authentication, Users, Add user, with Auto Confirm enabled. Any authenticated user has full admin access, so create accounts only for admins.
 
 Recommended: enable leaked password protection under Authentication, Passwords before creating the accounts.
 
-Publish times are entered and shown as Sydney wall-clock time and stored as UTC. New quizzes default to the next Saturday at 6:00am Sydney time, correct across AEST and AEDT.
+Publish times are entered and shown as Melbourne wall-clock time and stored as UTC. New quizzes default to the next Saturday at 6:00am, correct across AEST and AEDT. The IANA zone in `src/lib/admin.js` is `Australia/Sydney`, which has identical offsets and daylight-saving rules to Melbourne, so it is the same clock.
+
+Every time shown in the interface is labelled **AEST** or **AEDT** for its own instant, by `timeLabel()` in `src/lib/admin.js`. The abbreviation is read out of the zone with `Intl.DateTimeFormat` rather than hardcoded, so it stays correct through any future change to the daylight-saving rules. An edition published in July reads AEST; one published in January reads AEDT. In the editor the label follows what you type, so moving an edition across a daylight-saving boundary relabels the field as you set it.
+
+The dashboard and analytics footers say "All times Melbourne" rather than naming an offset, because a list can span both halves of the year and no single abbreviation would be right for every row in it.
 
 ## Web analytics
 

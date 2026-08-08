@@ -107,6 +107,18 @@ import SiteTop from '../components/SiteTop.astro';
     return section;
   }
 
+  // The next-edition line is dropped once its date has gone, which happens
+  // when the newest edition is withheld and this page falls back to an
+  // older one. Real information or nothing.
+  function footer(publishAt) {
+    const next = formatNextEdition(publishAt);
+    return el(
+      'footer',
+      { class: 'site-footer' },
+      next ? [el('p', { class: 'label muted', text: 'Next edition: ' + next })] : []
+    );
+  }
+
   function pitch(label, title, text, href, action, modifier) {
     return el('section', { class: 'pitch ' + modifier }, [
       el('p', { class: 'label muted', text: label }),
@@ -124,14 +136,14 @@ import SiteTop from '../components/SiteTop.astro';
         title: 'The first edition',
         text:
           'This is the first one. Every edition stays online from here, in full, with its ' +
-          'answers, so nothing published is ever taken down.',
+          'answers, ready to be played again.',
       };
     }
     return {
       title: inWords(back) + (back === 1 ? ' back issue' : ' back issues'),
       text:
-        'Every edition since the first stays online, in full, with its answers. Good for a ' +
-        'rainy afternoon or a long drive.',
+        'Every past edition stays online, in full, with its answers. Good for a rainy ' +
+        'afternoon or a long drive.',
     };
   }
 
@@ -181,12 +193,7 @@ import SiteTop from '../components/SiteTop.astro';
           'Find out more',
           'pitch-last'
         ),
-        el('footer', { class: 'site-footer' }, [
-          el('p', {
-            class: 'label muted',
-            text: 'Next edition: ' + formatNextEdition(quiz.publish_at),
-          }),
-        ])
+        footer(quiz.publish_at)
       );
     } catch (err) {
       console.error('[quizz]', err);

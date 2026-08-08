@@ -82,7 +82,7 @@ import Base from '../../layouts/Base.astro';
           text: titled ? quiz.title : 'Untitled',
         }),
       ]),
-      statusChip(quiz.status),
+      statusChip(quiz),
       el('p', { class: 'admin-row-date mono', text: formatSydney(quiz.publish_at) }),
       el('div', { class: 'admin-row-actions' }, [
         actionLink('/admin/edit?id=' + quiz.id, 'Edit'),
@@ -141,7 +141,9 @@ import Base from '../../layouts/Base.astro';
       parts.push(buildEmpty(create));
     }
 
-    parts.push(el('p', { class: 'admin-note mono', text: 'All times Sydney' }));
+    // Each row carries its own AEST or AEDT, so this names the place rather
+    // than an offset that could not be right for every row in the list.
+    parts.push(el('p', { class: 'admin-note mono', text: 'All times Melbourne' }));
 
     root.replaceChildren(...parts);
   }

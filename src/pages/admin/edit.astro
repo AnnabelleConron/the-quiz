@@ -18,9 +18,13 @@ import Base from '../../layouts/Base.astro';
     adminNav,
     field,
     statusChip,
+    editionState,
+    isPast,
     fetchQuizById,
     sydneyInputValue,
     parseSydneyInput,
+    formatSydney,
+    timeLabel,
   } from '../../lib/admin.js';
 
   const root = document.getElementById('admin-app');
@@ -39,6 +43,18 @@ import Base from '../../layouts/Base.astro';
       class: 'field-mono',
       value: sydneyInputValue(quiz.publish_at),
     });
+
+    // The label names the offset the entered date actually falls in, so
+    // moving an edition across a daylight-saving boundary relabels it.
+    const publishField = field('Publish', publishInput);
+    const publishLabel = publishField.querySelector('.field-label');
+    function refreshPublishLabel() {
+      const when = parseSydneyInput(publishInput.value);
+      publishLabel.textContent = 'Publish, ' + timeLabel(when || new Date(quiz.publish_at));
+    }
+    publishInput.addEventListener('input', refreshPublishLabel);
+    publishInput.addEventListener('change', refreshPublishLabel);
+    refreshPublishLabel();
 
     const categoryInputs = new Map();
     const questionInputs = new Map();
@@ -92,12 +108,105 @@ import Base from '../../layouts/Base.astro';
     const statusLine = el('p', { class: 'mono editor-status hidden', 'aria-live': 'polite' });
     const issuesBox = el('div', { class: 'editor-issues hidden', role: 'alert' });
     const saveBtn = el('button', { type: 'button', class: 'btn-primary', text: 'Save' });
+    const previewLink = el('a', {
+      class: 'btn',
+      href: '/admin/preview?id=' + quiz.id,
+      text: 'Preview',
+    });
     const scheduleBtn = el('button', { type: 'button', text: 'Schedule' });
-    const isDraft = quiz.status === 'draft';
+    const unscheduleBtn = el('button', { type: 'button', text: 'Unschedule' });
+    // Unpublish is an ordinary button: it is reversible and destroys nothing.
+    // The danger treatment, and the right-hand slot it carries, belong to the
+    // one control that cannot be undone.
+    const unpublishBtn = el('button', { type: 'button', text: 'Unpublish' });
+    const republishBtn = el('button', { type: 'button', text: 'Republish' });
+    const deleteBtn = el('button', { type: 'button', class: 'danger-btn', text: 'Delete draft' });
+
+    // Delete is the only control that confirms; one box serves it in every
+    // state.
+    const confirmBox = el('div', { class: 'editor-confirm hidden' });
+    const actionsRow = el('div', { class: 'editor-actions' });
+    let headChip = statusChip(quiz);
 
     function setStatus(message) {
       statusLine.textContent = message;
       statusLine.classList.toggle('hidden', !message);
+    }
+
+    // The controls follow the derived state, and transitions now run in both
+    // directions, so the row is rebuilt rather than mutated. Delete closes
+    // every row: the state decides what it is called and what it warns about,
+    // not whether it is there.
+    function renderActions() {
+      const state = editionState(quiz);
+      const buttons = [saveBtn, previewLink];
+      if (state === 'draft') buttons.push(scheduleBtn);
+      else if (state === 'scheduled') buttons.push(unscheduleBtn);
+      else if (state === 'unpublished') buttons.push(republishBtn);
+      else buttons.push(unpublishBtn);
+      deleteBtn.textContent = state === 'draft' ? 'Delete draft' : 'Delete edition';
+      buttons.push(deleteBtn);
+      actionsRow.replaceChildren(...buttons);
+    }
+
+    function swapChip() {
+      const chip = statusChip(quiz);
+      headChip.replaceWith(chip);
+      headChip = chip;
+    }
+
+    async function applyStatus(next, verb) {
+      const { error } = await supabase
+        .from('quizzes')
+        .update({ status: next })
+        .eq('id', quiz.id);
+      if (error) {
+        setStatus(verb + ' failed: ' + error.message);
+        return false;
+      }
+      quiz.status = next;
+      confirmBox.classList.add('hidden');
+      swapChip();
+      renderActions();
+      return true;
+    }
+
+    // The inline confirmation step, shared by the controls that need one.
+    // Unpublish and Delete sit in the same row on a live edition, so the box
+    // can be claimed by one while the other still holds it.
+    let confirmTrigger = null;
+
+    function askConfirm(trigger, { text, confirmLabel, cancelLabel, onConfirm }) {
+      // Release whoever had it, or that button stays disabled behind the new
+      // panel with no way back.
+      if (confirmTrigger && confirmTrigger !== trigger) confirmTrigger.disabled = false;
+      confirmTrigger = trigger;
+      const confirmBtn = el('button', { type: 'button', class: 'danger-btn', text: confirmLabel });
+      const cancelBtn = el('button', { type: 'button', text: cancelLabel });
+      confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        const done = await onConfirm();
+        trigger.disabled = false;
+        if (done) confirmTrigger = null;
+        else {
+          confirmBtn.disabled = false;
+          cancelBtn.disabled = false;
+        }
+      });
+      cancelBtn.addEventListener('click', () => {
+        confirmBox.classList.add('hidden');
+        confirmTrigger = null;
+        trigger.disabled = false;
+        trigger.focus();
+      });
+      confirmBox.replaceChildren(
+        el('p', { class: 'editor-confirm-text', text }),
+        el('div', { class: 'editor-confirm-actions' }, [confirmBtn, cancelBtn])
+      );
+      confirmBox.classList.remove('hidden');
+      trigger.disabled = true;
+      confirmBtn.focus();
     }
 
     function collect() {
@@ -142,7 +251,7 @@ import Base from '../../layouts/Base.astro';
       return issues;
     }
 
-    function showIssues(issues) {
+    function showIssues(issues, verb) {
       const rows = issues.map((issue, index) => {
         const go = el('button', { type: 'button', class: 'issue-go', text: 'Go →' });
         go.addEventListener('click', () => {
@@ -159,7 +268,9 @@ import Base from '../../layouts/Base.astro';
         el('p', {
           class: 'label issue-head',
           text:
-            'Cannot schedule. ' +
+            'Cannot ' +
+            verb +
+            '. ' +
             (issues.length === 1 ? '1 field missing' : issues.length + ' fields missing'),
         }),
         el('div', { class: 'issue-list' }, rows)
@@ -181,6 +292,12 @@ import Base from '../../layouts/Base.astro';
         setStatus('Save failed: ' + quizError.message);
         return false;
       }
+      // The controls depend on the date as well as the status, so keep the
+      // local copy in step with what was written. Moving a scheduled edition
+      // into the past turns Unschedule into Unpublish. Everything reads
+      // quiz.publish_at, never the input, so unsaved edits do not move it.
+      quiz.publish_at = data.publishAt.toISOString();
+      renderActions();
       const { error: catError } = await supabase.from('categories').upsert(data.categories);
       if (catError) {
         setStatus('Save failed: ' + catError.message);
@@ -209,7 +326,7 @@ import Base from '../../layouts/Base.astro';
       const data = collect();
       const issues = completenessIssues(data);
       if (issues.length > 0) {
-        showIssues(issues);
+        showIssues(issues, 'schedule');
         scheduleBtn.disabled = false;
         return;
       }
@@ -220,60 +337,198 @@ import Base from '../../layouts/Base.astro';
         scheduleBtn.disabled = false;
         return;
       }
-      const { error } = await supabase
+      if (await applyStatus('scheduled', 'Schedule')) {
+        setStatus(
+          isPast(quiz.publish_at)
+            ? 'Scheduled. Its time has already passed, so it is on the site now.'
+            : 'Scheduled.'
+        );
+      }
+      scheduleBtn.disabled = false;
+    });
+
+    // Pulling a scheduled edition back before its date. The state was derived
+    // when the page loaded, so re-read the date before writing: if the
+    // edition's morning arrived while this tab sat open, demoting it to draft
+    // would release the delete guard on content that may already have scores
+    // against it. The database refuses it too, this just explains why.
+    unscheduleBtn.addEventListener('click', async () => {
+      unscheduleBtn.disabled = true;
+      setStatus('');
+      const { data: fresh, error: readError } = await supabase
         .from('quizzes')
-        .update({ status: 'scheduled' })
-        .eq('id', quiz.id);
-      if (error) {
-        setStatus('Schedule failed: ' + error.message);
-        scheduleBtn.disabled = false;
+        .select('status, publish_at')
+        .eq('id', quiz.id)
+        .maybeSingle();
+      if (readError || !fresh) {
+        setStatus('Could not check the publish time. Try again.');
+        unscheduleBtn.disabled = false;
         return;
       }
-      setStatus('Scheduled.');
-      quiz.status = 'scheduled';
-      const nextChip = statusChip(quiz.status);
-      headChip.replaceWith(nextChip);
-      headChip = nextChip;
-      scheduleBtn.remove();
+      quiz.status = fresh.status;
+      quiz.publish_at = fresh.publish_at;
+      if (editionState(quiz) !== 'scheduled') {
+        swapChip();
+        renderActions();
+        unscheduleBtn.disabled = false;
+        setStatus(
+          'Edition ' +
+            pad2(quiz.edition_number) +
+            ' went live while this page was open. Withdraw it instead.'
+        );
+        return;
+      }
+      if (await applyStatus('draft', 'Unschedule')) {
+        setStatus('Pulled back to draft. It is no longer queued to publish.');
+      }
+      unscheduleBtn.disabled = false;
     });
 
-    let headChip = statusChip(quiz.status);
+    // Taking a live edition off the site. Nothing is destroyed.
+    unpublishBtn.addEventListener('click', () => {
+      setStatus('');
+      askConfirm(unpublishBtn, {
+        text:
+          'Withdraw edition ' +
+          pad2(quiz.edition_number) +
+          ' from the site? It disappears from the home page and the archive, and its ' +
+          'permalink stops working. Scores already recorded are kept.',
+        confirmLabel: 'Withdraw edition',
+        cancelLabel: 'Keep it live',
+        onConfirm: async () => {
+          const done = await applyStatus('unpublished', 'Withdraw');
+          if (done) setStatus('Withdrawn. It is no longer on the site.');
+          return done;
+        },
+      });
+    });
 
-    // Draft-only deletion with an inline confirmation step. Scheduled and
-    // published quizzes get no delete control.
-    const deleteBtn = el('button', { type: 'button', class: 'danger-btn', text: 'Delete draft' });
-    const deleteConfirm = el('div', { class: 'editor-confirm hidden' }, []);
-    deleteBtn.addEventListener('click', () => {
-      const confirmBtn = el('button', { type: 'button', class: 'danger-btn', text: 'Delete permanently' });
-      const cancelBtn = el('button', { type: 'button', text: 'Keep draft' });
-      confirmBtn.addEventListener('click', async () => {
-        confirmBtn.disabled = true;
-        cancelBtn.disabled = true;
-        const { error } = await supabase.from('quizzes').delete().eq('id', quiz.id);
-        if (error) {
-          setStatus('Delete failed: ' + error.message);
-          confirmBtn.disabled = false;
-          cancelBtn.disabled = false;
-          return;
-        }
-        location.href = '/admin';
-      });
-      cancelBtn.addEventListener('click', () => {
-        deleteConfirm.classList.add('hidden');
-        deleteBtn.disabled = false;
-        deleteBtn.focus();
-      });
-      deleteConfirm.replaceChildren(
-        el('p', {
-          class: 'editor-confirm-text',
-          text: 'Delete draft edition ' + quiz.edition_number + '? This cannot be undone.',
-        }),
-        el('div', { class: 'editor-confirm-actions' }, [confirmBtn, cancelBtn])
+    // Putting it back. The completeness check runs again because the edition
+    // stays editable while withdrawn, and its trigger does not fire on saves
+    // in that state.
+    republishBtn.addEventListener('click', async () => {
+      republishBtn.disabled = true;
+      setStatus('');
+      const data = collect();
+      const issues = completenessIssues(data);
+      if (issues.length > 0) {
+        showIssues(issues, 'republish');
+        republishBtn.disabled = false;
+        return;
+      }
+      issuesBox.classList.add('hidden');
+      setStatus('Saving.');
+      const saved = await save();
+      if (!saved) {
+        republishBtn.disabled = false;
+        return;
+      }
+      // Republish honours the date. A past one puts the edition straight back
+      // on the site; a future one requeues it, which is how an edition is
+      // postponed rather than restored.
+      const requeued = !isPast(quiz.publish_at);
+      if (await applyStatus(requeued ? 'scheduled' : 'published', 'Republish')) {
+        setStatus(
+          requeued
+            ? 'Requeued for ' + formatSydney(quiz.publish_at) + '. It is off the site until then.'
+            : 'Back on the site.'
+        );
+      }
+      republishBtn.disabled = false;
+    });
+
+    // What the delete would actually destroy, and what the edition is right
+    // now. The status is re-read because the warning turns on it: an edition
+    // that went live while this page sat open needs to say so, since that is
+    // the fact most likely to change your mind.
+    //
+    // Responses carry no quiz_id and reach a quiz only through question_id,
+    // and the editor already holds all sixteen. Counts are advisory: if either
+    // read fails the delete is still offered, just without numbers, rather
+    // than blocked on a stat.
+    async function readDeleteFacts() {
+      const questionIds = questions.map((q) => q.id);
+      const [row, scores, marks] = await Promise.all([
+        supabase.from('quizzes').select('status, publish_at').eq('id', quiz.id).maybeSingle(),
+        supabase
+          .from('quiz_completions')
+          .select('id', { count: 'exact', head: true })
+          .eq('quiz_id', quiz.id),
+        supabase
+          .from('responses')
+          .select('id', { count: 'exact', head: true })
+          .in('question_id', questionIds),
+      ]);
+      if (row.data) {
+        quiz.status = row.data.status;
+        quiz.publish_at = row.data.publish_at;
+      }
+      if (scores.error || marks.error) return null;
+      return { scores: scores.count || 0, marks: marks.count || 0 };
+    }
+
+    function plural(n, one, many) {
+      return n + ' ' + (n === 1 ? one : many);
+    }
+
+    // Deletion, in every state. A draft has nothing recorded against it, so it
+    // keeps its original short confirmation. Anything else names what goes,
+    // because there is no undo and no backup.
+    function deletePrompt(state, counts) {
+      const number = pad2(quiz.edition_number);
+      if (state === 'draft') {
+        return 'Delete draft edition ' + number + '? This cannot be undone.';
+      }
+      const opening =
+        state === 'live'
+          ? 'Edition ' + number + ' is on the site now. Delete it permanently? '
+          : 'Delete edition ' + number + ' permanently? ';
+      const removes = 'This removes the quiz, its sixteen questions and answers, ';
+      if (!counts) {
+        return opening + removes + 'and everything recorded against it. It cannot be undone.';
+      }
+      if (counts.scores === 0) {
+        return opening + removes + 'and nothing has been recorded against it yet.';
+      }
+      return (
+        opening +
+        removes +
+        plural(counts.scores, 'recorded score', 'recorded scores') +
+        ' and ' +
+        plural(counts.marks, 'mark', 'marks') +
+        '. It cannot be undone.'
       );
-      deleteConfirm.classList.remove('hidden');
+    }
+
+    deleteBtn.addEventListener('click', async () => {
+      setStatus('');
+      // Disabled while the facts are read, so a second tap cannot open a
+      // second panel.
       deleteBtn.disabled = true;
-      confirmBtn.focus();
+      const counts = await readDeleteFacts();
+      // The read may have moved the edition on. Show what it is now before
+      // asking about it.
+      const state = editionState(quiz);
+      swapChip();
+      renderActions();
+      deleteBtn.disabled = false;
+      askConfirm(deleteBtn, {
+        text: deletePrompt(state, counts),
+        confirmLabel: 'Delete permanently',
+        cancelLabel: state === 'draft' ? 'Keep draft' : 'Keep edition',
+        onConfirm: async () => {
+          const { error } = await supabase.from('quizzes').delete().eq('id', quiz.id);
+          if (error) {
+            setStatus('Delete failed: ' + error.message);
+            return false;
+          }
+          location.href = '/admin';
+          return true;
+        },
+      });
     });
+
+    renderActions();
 
     root.replaceChildren(
       adminNav(),
@@ -285,25 +540,12 @@ import Base from '../../layouts/Base.astro';
       el('section', { class: 'editor-meta' }, [
         el('p', { class: 'label muted', text: 'Edition details' }),
         el('div', { class: 'field-grid' }, [
-          field('Publish, Sydney time', publishInput),
+          publishField,
           field('Title, optional', titleInput),
         ]),
       ]),
       ...categoryBlocks,
-      el('div', { class: 'editor-foot' }, [
-        statusLine,
-        deleteConfirm,
-        el('div', { class: 'editor-actions' }, [
-          saveBtn,
-          ...(isDraft ? [scheduleBtn] : []),
-          el('a', {
-            class: 'btn',
-            href: '/admin/preview?id=' + quiz.id,
-            text: 'Preview',
-          }),
-          ...(isDraft ? [deleteBtn] : []),
-        ]),
-      ])
+      el('div', { class: 'editor-foot' }, [statusLine, confirmBox, actionsRow])
     );
   }
 

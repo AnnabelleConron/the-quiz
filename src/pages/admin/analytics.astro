@@ -68,7 +68,7 @@ import Base from '../../layouts/Base.astro';
             text: pad2(quiz.edition_number),
           }),
         ]),
-        el('td', {}, [statusChip(quiz.status)]),
+        el('td', {}, [statusChip(quiz)]),
         figure(count, maxCompletions),
         figure(avg, 16),
       ]);
@@ -88,7 +88,7 @@ import Base from '../../layouts/Base.astro';
         ]),
         el('tbody', {}, rows),
       ]),
-      el('p', { class: 'admin-note mono', text: 'All times Sydney' })
+      el('p', { class: 'admin-note mono', text: 'All times Melbourne' })
     );
   }
 
@@ -149,7 +149,7 @@ import Base from '../../layouts/Base.astro';
       adminNav('analytics'),
       el('div', { class: 'admin-head' }, [
         el('h1', { text: 'Edition ' + pad2(quiz.edition_number) }),
-        statusChip(quiz.status),
+        statusChip(quiz),
       ]),
       el('p', { class: 'admin-note mono', text: formatSydney(quiz.publish_at) }),
       summary,
