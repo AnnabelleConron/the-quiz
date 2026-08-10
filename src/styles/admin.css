@@ -307,9 +307,10 @@
 
 /* --- Editor ----------------------------------------------------------- */
 
+/* No closing rule: the first category band opens with one of its own, and a
+   boundary is drawn once. */
 .editor-meta {
   padding: var(--space-5) 0 var(--space-5);
-  border-bottom: var(--rule-zone);
 }
 
 /* The category band stays in view while its four questions scroll past,

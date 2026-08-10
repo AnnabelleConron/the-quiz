@@ -131,7 +131,7 @@
    ran. No date, no average, no completion count. */
 
 .count-strip {
-  padding: var(--space-2) var(--gutter);
+  padding: var(--space-2) 0;
   border-bottom: var(--rule-zone);
 }
 
@@ -139,7 +139,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   border-bottom: var(--rule-section);
-  padding-inline: 0;
 }
 
 .filter-btn {
@@ -205,11 +204,12 @@
   color: var(--grey);
 }
 
+/* Spans the row, which is inset to the column like its separator. */
 .archive-row.is-played::after {
   content: '';
   position: absolute;
-  left: var(--gutter);
-  right: var(--gutter);
+  left: 0;
+  right: 0;
   top: 50%;
   height: 1px;
   background: var(--rule-faint);
@@ -257,10 +257,11 @@
 
 /* Contents. The week's four categories, set at the scale they will be
    met at further down the page. */
+/* No closing rule: the first category band opens with one of its own, and a
+   boundary is drawn once. */
 .contents {
   padding-top: var(--space-6);
   padding-bottom: var(--space-5);
-  border-bottom: var(--rule-zone);
 }
 
 .contents-list {

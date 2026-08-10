@@ -41,7 +41,7 @@ import SiteTop from '../components/SiteTop.astro';
     const row = el(
       'a',
       {
-        class: 'archive-row bleed' + (edition.played ? ' is-played' : '') + (isLast ? ' is-last' : ''),
+        class: 'archive-row' + (edition.played ? ' is-played' : '') + (isLast ? ' is-last' : ''),
         href: '/quiz/' + edition.number,
       },
       [
@@ -73,7 +73,7 @@ import SiteTop from '../components/SiteTop.astro';
       if (!quizzes || quizzes.length === 0) {
         root.replaceChildren(
           masthead,
-          el('div', { class: 'count-strip mono bleed', text: 'No quizzes yet' })
+          el('div', { class: 'count-strip mono', text: 'No quizzes yet' })
         );
         return;
       }
@@ -89,7 +89,7 @@ import SiteTop from '../components/SiteTop.astro';
 
       const total = editions.length;
       const countStrip = el('div', {
-        class: 'count-strip mono bleed',
+        class: 'count-strip mono',
         text: total + (total === 1 ? ' quiz' : ' quizzes'),
       });
 
@@ -125,7 +125,7 @@ import SiteTop from '../components/SiteTop.astro';
           });
         });
         parts.push(
-          el('div', { class: 'filters bleed', role: 'group', 'aria-label': 'Order' }, buttons)
+          el('div', { class: 'filters', role: 'group', 'aria-label': 'Order' }, buttons)
         );
         paint(current);
       } else {

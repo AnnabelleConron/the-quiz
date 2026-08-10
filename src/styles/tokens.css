@@ -72,7 +72,15 @@
      A fourth token covers closed shapes (buttons, mark cells, the bar
      track). It is drawn like the section rule but means something else:
      an edge, not a division. Keeping it named separately means a change to
-     the section rule does not silently redraw every button. */
+     the section rule does not silently redraw every button.
+
+     One boundary, one rule. A boundary is drawn by exactly one of the two
+     elements that meet at it, never by both, or the tiers add together into
+     a line that belongs to no tier at all. The same discipline that
+     suppresses the last item's separator in a list applies at the section
+     level: where a washed band opens the next section the band's rule wins
+     and the block above drops its closing rule. Anything declaring a bottom
+     rule directly above something declaring a top rule is a bug. */
 
   --rule-zone: 3px double var(--ink);
   --rule-section: 1px solid var(--ink);

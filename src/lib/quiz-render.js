@@ -285,7 +285,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     ])
   );
 
-  const contents = el('section', { class: 'contents bleed' }, [
+  const contents = el('section', { class: 'contents' }, [
     el('ol', { class: 'contents-list' }, contentsRows),
     el('p', {
       class: 'contents-note',

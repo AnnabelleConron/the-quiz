@@ -182,9 +182,36 @@ body.menu-open {
 
 /* --- Full-bleed bands -------------------------------------------------
 
-   The reading column is capped, but banded sections and rules run the full
-   width of it. This pulls an element out to the column edge and puts the
-   gutter back on the inside. */
+   Which elements bleed is a property of the kind of element, not a choice
+   made per element. Tier governs a rule's weight; bleed governs its width;
+   the two are independent and must not be tangled, or the same tier ends up
+   drawn at two widths on one page.
+
+   The rule:
+
+     An element bleeds if it has a banded ground of its own, because the
+     band's edge is the page's edge. Everything else stays inset to the
+     gutter and aligns with the content column, including zone rules on
+     unbanded sections.
+
+   So .category-header, .score, .edition, .admin-empty and
+   .editor-category-head bleed, because each paints --wash or --wash-strong
+   across the column. Mastheads, datelines, contents, count strips, filter
+   rows, list rows and table heads do not.
+
+   Two clarifications the rule needs:
+
+     A ground has to be the element's resting state. A hover ground, like
+     the one on .archive-row, is a transient state rather than the kind of
+     thing the element is, so it does not earn a bleed.
+
+     A closed box is not a band. .editor-issues and .editor-confirm fill
+     themselves with --wash, but they are bordered on all four sides and
+     sit in the column as objects. They stay inset.
+
+   This pulls an element out to the column edge and puts the gutter back on
+   the inside, so its ground and its rules span while its content stays in
+   the column. */
 
 .bleed {
   margin-inline: calc(var(--gutter) * -1);
