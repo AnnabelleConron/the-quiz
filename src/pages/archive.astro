@@ -66,7 +66,7 @@ import SiteTop from '../components/SiteTop.astro';
         .order('edition_number', { ascending: false });
       if (error) throw error;
 
-      const masthead = el('div', { class: 'masthead masthead-archive' }, [
+      const masthead = el('div', { class: 'masthead' }, [
         el('h1', { class: 'masthead-title', text: 'The Archive' }),
       ]);
 

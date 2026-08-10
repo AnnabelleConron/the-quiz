@@ -262,7 +262,6 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
 
   frag.appendChild(
     el('div', { class: 'masthead' }, [
-      el('p', { class: 'label masthead-kicker', text: 'The Weekend Quiz' }),
       el('h1', { class: 'masthead-title', text: 'The Quizz' }),
     ])
   );

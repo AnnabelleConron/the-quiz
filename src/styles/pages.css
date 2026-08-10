@@ -3,16 +3,25 @@
 
 /* --- Mastheads --------------------------------------------------------
 
+   No kicker on any of them. The title carries the page alone.
+
    Two scales and no more. Home is the front page and is set larger than
    anything inside it; quiz, archive and About share the inner scale, with
-   the same leading and the same padding above and below, so the header
-   block is one height wherever you land.
+   the same leading and the same padding, so the header block is one height
+   wherever you land inside the site. Home takes the next step up of both
+   size and padding, so the block keeps the same proportions at its larger
+   scale rather than looking tight.
 
-   The closing rule is --rule-item on every one of them. The masthead names
-   the page, and what sits directly beneath it is still front matter: a
-   dateline, a count strip, or the page's opening section. The zone boundary
-   comes after that strip, not before it. Being an item rule, it stays
-   inset. */
+   The closing rule is --rule-item on every page but one. The masthead names
+   the page, and what sits directly beneath it is usually still front
+   matter: a dateline on the quiz, a count strip on the archive. The zone
+   boundary belongs after that strip rather than before it, so the masthead
+   itself closes on a hairline and stays inset.
+
+   About is the exception, and the only one. It has no strip. Its masthead
+   is the whole of its front matter, so the boundary that comes after the
+   strip on other pages comes directly after the masthead here. It closes on
+   a zone rule, and therefore bleeds, per the rule beside .bleed. */
 
 .masthead {
   padding-block: var(--space-6);
@@ -20,21 +29,20 @@
   border-bottom: var(--rule-item);
 }
 
-.masthead-kicker {
-  letter-spacing: var(--track-label-widest);
-  color: var(--grey);
-}
-
 .masthead-title {
-  margin-top: var(--space-2);
   font-size: var(--fs-masthead-inner);
   line-height: var(--lh-masthead);
   letter-spacing: var(--track-display);
 }
 
-/* The front page, and the only thing set at this scale. */
+/* The front page, and the only thing set at this scale. Its padding tracks
+   its title rather than being a second fixed value: the coefficient is 0.52
+   of the title's own 14vw, so the block holds the same proportion at every
+   width. That matters because --fs-masthead-front clamps down to the inner
+   size on a phone, and there the padding lands on --space-6 too, so a
+   narrow home matches a narrow inner page exactly. */
 .masthead-home {
-  padding-block: var(--space-7);
+  padding-block: clamp(var(--space-6), 7.3vw, var(--space-7));
 }
 
 .masthead-home .masthead-title {
@@ -42,9 +50,9 @@
   letter-spacing: var(--track-display-tight);
 }
 
-/* No kicker: the archive is named once and plainly. */
-.masthead-archive .masthead-title {
-  margin-top: 0;
+/* The documented exception. See the comment above. */
+.masthead-about {
+  border-bottom: var(--rule-zone);
 }
 
 /* --- Home -------------------------------------------------------------
@@ -218,15 +226,19 @@
 
 /* --- About ------------------------------------------------------------ */
 
-/* About is a short page, so the room it needs comes from here rather than
-   from resizing its masthead. */
+/* The opening interval matches the quiz's dateline to contents, so the
+   distance from a page's front matter to its first section reads the same
+   across the site. More room below, because what follows is the footer. */
 .about {
-  padding-block: clamp(var(--space-8), 8vw, var(--space-9)) clamp(var(--space-8), 9vw, var(--space-9));
+  padding-block: var(--space-6) var(--space-7);
   border-bottom: var(--rule-item);
 }
 
+/* A step down from the masthead, the same step home takes to .pitch-title.
+   At --fs-display-3xl this matched --fs-masthead-inner exactly and the
+   hierarchy went flat. */
 .about-title {
-  font-size: clamp(var(--fs-display-xl), 8.5vw, var(--fs-display-3xl));
+  font-size: var(--fs-display-xl);
 }
 
 .about-text {

@@ -108,7 +108,11 @@ Each family has its own scale in `tokens.css`: `--fs-label-*` for mono, `--fs-re
 
 Two treatments sit on top of that scale and vary by size alone:
 
-**Mastheads** come at exactly two scales. `--fs-masthead-front` is the front page and is used by nothing else; `--fs-masthead-inner` is every inner page, public and admin alike, so the header block is one height wherever you land. They share `--lh-masthead` and the same padding above and below. The masthead's closing rule is `--rule-item` on every page: what sits directly beneath it is still front matter, and the zone boundary comes after that strip rather than before it.
+**Mastheads** come at exactly two scales, and carry no kicker: the title alone names the page. `--fs-masthead-front` is the front page and is used by nothing else; `--fs-masthead-inner` is every inner page, public and admin alike, so the header block is one height wherever you land. They share `--lh-masthead`.
+
+Inner pages share their padding too. Home's padding is fluid rather than fixed, tracking its own title at a constant 0.52 of it, so the block holds the same proportions at its larger scale. Because `--fs-masthead-front` clamps down to the inner size on a phone, home's padding lands on `--space-6` there as well, and a narrow home matches a narrow inner page exactly.
+
+The masthead's closing rule is `--rule-item` on every page **but one**: what sits directly beneath it is usually still front matter, a dateline or a count strip, and the zone boundary belongs after that strip rather than before it. **About is the exception.** It has no strip, so its masthead is the whole of its front matter and the boundary that follows the strip elsewhere comes directly after the masthead there. It closes on `--rule-zone` and therefore bleeds, like every other zone rule.
 
 **Display numerals** are one family of objects, applied through the `.numeral` class: one face, one weight, `--lh-numeral` and `--track-display` at every size, from the 132px final score down to a 21px category tally. Anything setting its own leading or tracking on a figure breaks the family.
 
