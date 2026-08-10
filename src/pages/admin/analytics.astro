@@ -76,7 +76,7 @@ import Base from '../../layouts/Base.astro';
 
     root.replaceChildren(
       adminNav('analytics'),
-      el('div', { class: 'admin-head' }, [el('h1', { text: 'Analytics' })]),
+      el('div', { class: 'admin-head bleed' }, [el('h1', { text: 'Analytics' })]),
       el('table', { class: 'stat-table' }, [
         el('thead', {}, [
           el('tr', {}, [
@@ -133,21 +133,21 @@ import Base from '../../layouts/Base.astro';
     const summary = el('div', { class: 'stat-summary' }, [
       el('div', { class: 'stat-cell' }, [
         el('p', { class: 'label muted', text: 'Completions' }),
-        el('p', { class: 'stat-cell-value', text: String(count) }),
+        el('p', { class: 'stat-cell-value numeral', text: String(count) }),
       ]),
     ]);
     if (avg != null) {
       summary.appendChild(
         el('div', { class: 'stat-cell' }, [
           el('p', { class: 'label muted', text: 'Average' }),
-          el('p', { class: 'stat-cell-value', text: String(avg) }),
+          el('p', { class: 'stat-cell-value numeral', text: String(avg) }),
         ])
       );
     }
 
     root.replaceChildren(
       adminNav('analytics'),
-      el('div', { class: 'admin-head' }, [
+      el('div', { class: 'admin-head bleed' }, [
         el('h1', { text: 'Edition ' + pad2(quiz.edition_number) }),
         statusChip(quiz),
       ]),

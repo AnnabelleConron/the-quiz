@@ -21,8 +21,6 @@
   gap: var(--space-4);
   flex-wrap: wrap;
   min-height: var(--bar-height-admin);
-  margin: 0 calc(var(--gutter) * -1);
-  padding: 0 var(--gutter);
   background: var(--ink);
   color: var(--paper-on-ink);
 }
@@ -103,9 +101,13 @@
 .admin-top-links a[aria-current='page'] {
   color: var(--paper-on-ink);
   border-bottom: var(--rule-section-inverse);
+  /* Sits the underline just clear of the descenders. Optical, and specific
+     to this one label at this one size. */
   padding-bottom: 2px;
 }
 
+/* The only focus override on the site: the ring is declared once in
+   base.css, and inverts here because it is drawn on ink. */
 .admin-top :focus-visible {
   outline-color: var(--paper-on-ink);
 }
@@ -120,13 +122,16 @@
   justify-content: space-between;
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-5) 0 var(--space-4);
+  padding-block: var(--space-6);
   border-bottom: var(--rule-zone);
 }
 
+/* The admin page head is a masthead, and takes the inner scale like every
+   other inner page. */
 .admin-head h1 {
-  font-size: var(--fs-display-2xl);
+  font-size: var(--fs-masthead-inner);
   line-height: var(--lh-masthead);
+  letter-spacing: var(--track-display);
 }
 
 .admin-head .status {
@@ -140,14 +145,11 @@
 
 /* --- Login ------------------------------------------------------------ */
 
+/* Only the fields are panelled. The page head above is a page head like any
+   other, so its zone rule bleeds with the rest. */
 .admin-login {
-  max-width: 380px;
-  margin: 0 auto;
-}
-
-.admin-login .admin-head {
-  border-bottom: var(--rule-zone);
-  margin-bottom: var(--space-5);
+  max-width: var(--measure-form);
+  margin: var(--space-6) auto 0;
 }
 
 .admin-login-actions {
@@ -207,7 +209,7 @@
 
 .admin-table-head {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: var(--col-number-wide) 1fr auto;
   gap: var(--space-1) var(--space-3);
   padding-top: var(--space-2);
   padding-bottom: var(--space-2);
@@ -216,16 +218,26 @@
   color: var(--grey);
 }
 
+/* Rows have a container of their own so the last one can close the list
+   with :last-child. Without it the trailing note would be the last child
+   and no row would ever match. */
+.admin-list {
+  display: block;
+}
+
 .admin-row {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: var(--col-number-wide) 1fr auto;
   align-items: baseline;
   gap: var(--space-1) var(--space-3);
   padding: var(--space-3) 0 var(--space-4);
   border-bottom: var(--rule-item);
 }
 
-.admin-row.is-last {
+/* A list closes on a section rule rather than dropping its separator: the
+   last row still needs a bottom edge, it just needs a heavier one. Same for
+   .archive-row and the analytics table. */
+.admin-row:last-child {
   border-bottom: var(--rule-section);
 }
 
@@ -274,7 +286,7 @@
 }
 
 .admin-empty-text {
-  max-width: 42ch;
+  max-width: var(--measure-note);
   margin: var(--space-3) 0 var(--space-5);
   font-size: var(--fs-read);
   line-height: var(--lh-loose);
@@ -301,7 +313,7 @@
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--measure-field), 1fr));
   gap: 0 var(--space-4);
 }
 
@@ -339,7 +351,7 @@
 
 .editor-question {
   display: grid;
-  grid-template-columns: 30px 1fr;
+  grid-template-columns: var(--col-number) 1fr;
   gap: var(--space-3);
   padding: var(--space-4) 0 var(--space-5);
   border-bottom: var(--rule-item);
@@ -363,7 +375,7 @@
 
 .editor-foot {
   border-top: var(--rule-zone);
-  padding-bottom: var(--space-7);
+  padding-block-end: var(--space-7);
 }
 
 .editor-status {
@@ -380,6 +392,9 @@
   padding-top: var(--space-5);
 }
 
+/* Save takes the remaining width of the row. The basis is a wrapping hint,
+   the width it should not shrink below before the row breaks, rather than a
+   measure anything aligns to. */
 .editor-actions .btn-primary {
   flex: 1 1 180px;
 }
@@ -452,7 +467,7 @@
   border-bottom: var(--rule-item);
 }
 
-.issue-row.is-last {
+.issue-row:last-child {
   border-bottom: none;
 }
 
@@ -483,7 +498,7 @@
 
 .stat-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--measure-stat), 1fr));
   margin-top: var(--space-5);
   border-top: var(--rule-section);
   border-bottom: var(--rule-section);
@@ -500,9 +515,7 @@
 
 .stat-cell-value {
   margin-top: var(--space-1);
-  font-family: var(--font-display);
   font-size: var(--fs-display-md);
-  line-height: var(--lh-tight);
 }
 
 .stat-heading {
@@ -569,5 +582,5 @@
 
 .stat-table .bar-track {
   margin-top: var(--space-2);
-  max-width: 160px;
+  max-width: var(--measure-bar);
 }

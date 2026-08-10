@@ -37,15 +37,15 @@ import SiteTop from '../components/SiteTop.astro';
     return list.sort((a, b) => b.number - a.number);
   }
 
-  function buildRow(edition, isLast) {
+  function buildRow(edition) {
     const row = el(
       'a',
       {
-        class: 'archive-row' + (edition.played ? ' is-played' : '') + (isLast ? ' is-last' : ''),
+        class: 'archive-row' + (edition.played ? ' is-played' : ''),
         href: '/quiz/' + edition.number,
       },
       [
-        el('span', { class: 'archive-number', text: pad2(edition.number) }),
+        el('span', { class: 'archive-number numeral', text: pad2(edition.number) }),
         el('span', { class: 'archive-cats', text: edition.categories.join('  ·  ') }),
       ]
     );
@@ -73,7 +73,7 @@ import SiteTop from '../components/SiteTop.astro';
       if (!quizzes || quizzes.length === 0) {
         root.replaceChildren(
           masthead,
-          el('div', { class: 'count-strip mono', text: 'No quizzes yet' })
+          el('div', { class: 'count-strip mono bleed', text: 'No quizzes yet' })
         );
         return;
       }
@@ -89,16 +89,14 @@ import SiteTop from '../components/SiteTop.astro';
 
       const total = editions.length;
       const countStrip = el('div', {
-        class: 'count-strip mono',
+        class: 'count-strip mono bleed',
         text: total + (total === 1 ? ' quiz' : ' quizzes'),
       });
 
       const list = el('div', { class: 'archive-list' });
       function paint(key) {
         const sorted = sortFor(key, editions);
-        list.replaceChildren(
-          ...sorted.map((edition, index) => buildRow(edition, index === sorted.length - 1))
-        );
+        list.replaceChildren(...sorted.map(buildRow));
       }
 
       const parts = [masthead, countStrip];

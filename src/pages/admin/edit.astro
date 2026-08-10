@@ -252,17 +252,16 @@ import Base from '../../layouts/Base.astro';
     }
 
     function showIssues(issues, verb) {
-      const rows = issues.map((issue, index) => {
+      const rows = issues.map((issue) => {
         const go = el('button', { type: 'button', class: 'issue-go', text: 'Go →' });
         go.addEventListener('click', () => {
           issue.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
           issue.input.focus({ preventScroll: true });
         });
-        return el(
-          'div',
-          { class: 'issue-row' + (index === issues.length - 1 ? ' is-last' : '') },
-          [el('span', { class: 'issue-label', text: issue.label }), go]
-        );
+        return el('div', { class: 'issue-row' }, [
+          el('span', { class: 'issue-label', text: issue.label }),
+          go,
+        ]);
       });
       issuesBox.replaceChildren(
         el('p', {
@@ -532,7 +531,7 @@ import Base from '../../layouts/Base.astro';
 
     root.replaceChildren(
       adminNav(),
-      el('div', { class: 'admin-head' }, [
+      el('div', { class: 'admin-head bleed' }, [
         el('h1', { text: 'Edition ' + pad2(quiz.edition_number) }),
         headChip,
       ]),
@@ -545,7 +544,7 @@ import Base from '../../layouts/Base.astro';
         ]),
       ]),
       ...categoryBlocks,
-      el('div', { class: 'editor-foot' }, [statusLine, confirmBox, actionsRow])
+      el('div', { class: 'editor-foot bleed' }, [statusLine, confirmBox, actionsRow])
     );
   }
 

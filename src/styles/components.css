@@ -36,8 +36,6 @@
   align-items: center;
   justify-content: space-between;
   height: var(--bar-height);
-  margin: 0 calc(var(--gutter) * -1);
-  padding: 0 var(--gutter);
   background-color: var(--paper);
   border-bottom: var(--rule-zone);
 }
@@ -49,7 +47,9 @@
   text-transform: uppercase;
 }
 
-/* Three hairlines. A button, not an icon font, so it inherits focus. */
+/* Three hairlines. A button, not an icon font, so it inherits focus. The
+   lengths below are the icon's own geometry, drawn to look right at 22px,
+   and mean nothing outside it: there is no layout for them to align to. */
 .menu-toggle {
   display: flex;
   flex-direction: column;
@@ -62,16 +62,23 @@
   background: transparent;
 }
 
+/* A bare control: no ground and no edge, so the accent goes to the only
+   thing it has, which is its three hairlines. */
 .menu-toggle:hover,
 .menu-toggle:active {
   background: transparent;
+}
+
+.menu-toggle:hover span,
+.menu-toggle:active span {
+  background: var(--accent);
 }
 
 .menu-toggle span {
   display: block;
   width: 22px;
   margin-left: auto;
-  height: 1px;
+  height: var(--rule-hairline);
   background: var(--ink);
 }
 
@@ -180,24 +187,24 @@ body.menu-open {
   color: var(--grey);
 }
 
-/* --- Full-bleed bands -------------------------------------------------
+/* --- Full bleed -------------------------------------------------------
 
-   Which elements bleed is a property of the kind of element, not a choice
-   made per element. Tier governs a rule's weight; bleed governs its width;
-   the two are independent and must not be tangled, or the same tier ends up
-   drawn at two widths on one page.
+   Which elements bleed is a property of the kind of element, never a
+   choice made per element, or the same thing ends up drawn at two widths
+   on one page.
 
-   The rule:
+   The rule, in two halves:
 
-     An element bleeds if it has a banded ground of its own, because the
-     band's edge is the page's edge. Everything else stays inset to the
-     gutter and aligns with the content column, including zone rules on
-     unbanded sections.
+     A zone rule always runs full bleed. Without exception. A zone boundary
+     separates parts of the page that differ in kind, and that boundary is
+     the width of the page, not of the text.
 
-   So .category-header, .score, .edition, .admin-empty and
-   .editor-category-head bleed, because each paints --wash or --wash-strong
-   across the column. Mastheads, datelines, contents, count strips, filter
-   rows, list rows and table heads do not.
+     Section and item rules always stay inset, aligned with the content
+     column, because they divide content and belong to it.
+
+   A banded ground bleeds too, since a band's edge is the page's edge:
+   .category-header, .score, .edition, .admin-empty and .editor-category-head
+   each paint --wash or --wash-strong and so each carries .bleed.
 
    Two clarifications the rule needs:
 
@@ -205,18 +212,48 @@ body.menu-open {
      the one on .archive-row, is a transient state rather than the kind of
      thing the element is, so it does not earn a bleed.
 
-     A closed box is not a band. .editor-issues and .editor-confirm fill
-     themselves with --wash, but they are bordered on all four sides and
-     sit in the column as objects. They stay inset.
+     A closed shape is not a divider. .editor-confirm and .danger-btn draw
+     their borders at zone weight to say "stop", but they are bordered on
+     all sides and sit in the column as objects, so they do not bleed. Nor
+     does .editor-issues, which fills itself with --wash for the same
+     reason.
 
    This pulls an element out to the column edge and puts the gutter back on
    the inside, so its ground and its rules span while its content stays in
-   the column. */
+   the column. Anything that needs to bleed uses this class rather than
+   repeating the negative margin. */
 
 .bleed {
   margin-inline: calc(var(--gutter) * -1);
   padding-inline: var(--gutter);
 }
+
+/* --- Hover ------------------------------------------------------------
+
+   Four kinds of interactive element, one behaviour each. Hover always says
+   the same thing about the same kind of control, so it can be read without
+   being learned per page.
+
+     Filled control    a ground already. Hover moves that ground to the
+                       accent. .btn-primary, and a pressed filter.
+
+     Edged control     an outline waiting to be filled. Hover fills it with
+                       ink and inverts the text. Every plain button and
+                       .btn, including .danger-btn and the filter row.
+
+     Bare text control no ground and no edge, so only the text can move.
+                       Hover takes the accent. Links in prose, .menu-close,
+                       .issue-go. On the ink bar there is no accent to
+                       reach for, so the inversion is to full paper
+                       instead: .admin-top links brighten.
+
+     List row          a whole row is the target, so the row takes a wash.
+                       .archive-row.
+
+   One deliberate exception. .mark-btn does not respond to hover at all.
+   A tick or a cross is a record of what happened, not a control being
+   offered, and the only states it has are marked and unmarked. Anything
+   else would read as a third state. */
 
 /* --- Buttons ----------------------------------------------------------
 
@@ -345,7 +382,7 @@ textarea::placeholder {
 
 textarea {
   resize: vertical;
-  min-height: 74px;
+  min-height: var(--field-textarea-min);
 }
 
 /* Fields holding machine values: dates, edition numbers, status. */
@@ -403,6 +440,21 @@ textarea {
   cursor: default;
 }
 
+/* --- Display numerals -------------------------------------------------
+
+   The design rests on these figures, so they are one family of objects:
+   one face, one weight, one leading and one tracking at every size. Size
+   is the only thing that varies, from the 132px final score down to a 21px
+   category tally. Anything setting its own leading or tracking here breaks
+   the family. */
+
+.numeral {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  line-height: var(--lh-numeral);
+  letter-spacing: var(--track-display);
+}
+
 /* --- The upside-down answer ------------------------------------------
 
    An homage to printed quizzes. Set in the display face between two rules,
@@ -457,6 +509,9 @@ textarea {
 
 /* --- Utility ---------------------------------------------------------- */
 
+/* The standard clip-to-nothing idiom. The 1px box and matching negative
+   margin are the mechanism itself, not a design measure: a zero-size box
+   is dropped from the accessibility tree by some screen readers. */
 .visually-hidden {
   position: absolute;
   width: 1px;

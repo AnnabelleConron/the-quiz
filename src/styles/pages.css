@@ -3,12 +3,19 @@
 
 /* --- Mastheads --------------------------------------------------------
 
-   One treatment, three sizes. The quiz sets its name above a week's
-   questions, home sets it as the front page, the archive and About name
-   themselves. */
+   Two scales and no more. Home is the front page and is set larger than
+   anything inside it; quiz, archive and About share the inner scale, with
+   the same leading and the same padding above and below, so the header
+   block is one height wherever you land.
+
+   The closing rule is --rule-item on every one of them. The masthead names
+   the page, and what sits directly beneath it is still front matter: a
+   dateline, a count strip, or the page's opening section. The zone boundary
+   comes after that strip, not before it. Being an item rule, it stays
+   inset. */
 
 .masthead {
-  padding: var(--space-6) 0 var(--space-5);
+  padding-block: var(--space-6);
   text-align: center;
   border-bottom: var(--rule-item);
 }
@@ -20,35 +27,24 @@
 
 .masthead-title {
   margin-top: var(--space-2);
-  font-size: var(--fs-display-3xl);
-  line-height: 0.92;
+  font-size: var(--fs-masthead-inner);
+  line-height: var(--lh-masthead);
+  letter-spacing: var(--track-display);
 }
 
-/* The front page carries the name larger than any page inside it. */
+/* The front page, and the only thing set at this scale. */
 .masthead-home {
-  padding: var(--space-7) 0 var(--space-6);
+  padding-block: var(--space-7);
 }
 
 .masthead-home .masthead-title {
-  font-size: var(--fs-masthead);
-  line-height: 0.86;
+  font-size: var(--fs-masthead-front);
   letter-spacing: var(--track-display-tight);
 }
 
 /* No kicker: the archive is named once and plainly. */
 .masthead-archive .masthead-title {
   margin-top: 0;
-}
-
-/* About closes its masthead with a zone rule, because what follows is the
-   whole page rather than a strip of metadata. */
-.masthead-about {
-  padding: clamp(var(--space-6), 6vw, var(--space-8)) 0 clamp(var(--space-5), 4vw, var(--space-7));
-  border-bottom: var(--rule-zone);
-}
-
-.masthead-about .masthead-title {
-  font-size: var(--fs-masthead);
 }
 
 /* --- Home -------------------------------------------------------------
@@ -107,7 +103,7 @@
 /* The two sections below the fold: what is behind this week, and what the
    paper is. Same shape, secondary action each. */
 .pitch {
-  padding: var(--space-6) 0 var(--space-6);
+  padding-block: var(--space-6);
   border-bottom: var(--rule-section);
 }
 
@@ -131,7 +127,7 @@
    ran. No date, no average, no completion count. */
 
 .count-strip {
-  padding: var(--space-2) 0;
+  padding-block: var(--space-2);
   border-bottom: var(--rule-zone);
 }
 
@@ -152,15 +148,24 @@
   border-left: var(--rule-item);
 }
 
+/* Filled control: already has a ground, so hover moves it to the accent.
+   The unpressed filters are edged controls and take the ink fill from the
+   global button rule. */
 .filter-btn[aria-pressed='true'] {
   background: var(--ink);
+  color: var(--paper-on-ink);
+}
+
+.filter-btn[aria-pressed='true']:hover,
+.filter-btn[aria-pressed='true']:active {
+  background: var(--accent);
   color: var(--paper-on-ink);
 }
 
 .archive-row {
   position: relative;
   display: grid;
-  grid-template-columns: 62px 1fr;
+  grid-template-columns: var(--col-number-wide) 1fr;
   align-items: center;
   gap: var(--space-3);
   padding-top: var(--space-3);
@@ -174,16 +179,12 @@
 }
 
 /* The list closes on a section rule, not a faint one. */
-.archive-row.is-last {
+.archive-row:last-child {
   border-bottom: var(--rule-section);
 }
 
 .archive-number {
-  font-family: var(--font-display);
-  font-weight: var(--weight-display);
   font-size: var(--fs-display-md);
-  line-height: var(--lh-display);
-  letter-spacing: var(--track-display);
 }
 
 /* One line, running off to the right rather than wrapping. The fade is a
@@ -211,14 +212,16 @@
   left: 0;
   right: 0;
   top: 50%;
-  height: 1px;
+  height: var(--rule-hairline);
   background: var(--rule-faint);
 }
 
 /* --- About ------------------------------------------------------------ */
 
+/* About is a short page, so the room it needs comes from here rather than
+   from resizing its masthead. */
 .about {
-  padding: clamp(var(--space-7), 8vw, 88px) 0 clamp(var(--space-7), 9vw, 96px);
+  padding-block: clamp(var(--space-8), 8vw, var(--space-9)) clamp(var(--space-8), 9vw, var(--space-9));
   border-bottom: var(--rule-item);
 }
 
@@ -231,7 +234,7 @@
   padding-top: var(--space-5);
   border-top: var(--rule-item);
   font-size: clamp(var(--fs-read), 2.4vw, var(--fs-read-xl));
-  line-height: 1.5;
+  line-height: var(--lh-prose);
 }
 
 /* --- Quiz -------------------------------------------------------------
@@ -246,7 +249,7 @@
   grid-template-columns: auto 1fr auto;
   align-items: baseline;
   gap: var(--space-3);
-  padding: var(--space-2) 0;
+  padding-block: var(--space-2);
   border-bottom: var(--rule-zone);
 }
 
@@ -345,11 +348,6 @@
   border-bottom: none;
 }
 
-.question:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
 .question-number {
   padding-top: var(--space-1);
   letter-spacing: var(--track-numeral);
@@ -420,17 +418,11 @@
 }
 
 .score-number {
-  font-family: var(--font-display);
-  font-weight: var(--weight-display);
   font-size: var(--fs-display-5xl);
-  line-height: var(--lh-numeral);
-  letter-spacing: var(--track-display-tight);
 }
 
 .score-total {
-  font-family: var(--font-display);
   font-size: var(--fs-display-md);
-  line-height: var(--lh-display);
   color: var(--grey);
 }
 
@@ -454,9 +446,7 @@
 
 .score-stat-value {
   margin-top: var(--space-1);
-  font-family: var(--font-display);
   font-size: var(--fs-display-md);
-  line-height: var(--lh-tight);
 }
 
 /* The one-completion case. A statement, not a number. */
@@ -500,9 +490,7 @@
 }
 
 .breakdown-score {
-  font-family: var(--font-display);
   font-size: var(--fs-display-xs);
-  line-height: var(--lh-display);
 }
 
 .breakdown-total {
@@ -522,7 +510,7 @@
 /* Editor's note. The incomplete end state, and the submission failure. */
 .endnote {
   border-top: var(--rule-zone);
-  padding: var(--space-5) 0 var(--space-6);
+  padding-block: var(--space-5) var(--space-6);
 }
 
 .endnote-text {

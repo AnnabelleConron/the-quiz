@@ -70,11 +70,11 @@ import Base from '../../layouts/Base.astro';
     return el('a', { class: 'btn btn-small', href, text });
   }
 
-  function buildRow(quiz, isLast) {
+  function buildRow(quiz) {
     // A title is optional on most editions. Without one the row is named by
     // its number alone, and the title cell says so quietly.
     const titled = Boolean(quiz.title);
-    return el('div', { class: 'admin-row' + (isLast ? ' is-last' : '') }, [
+    return el('div', { class: 'admin-row' }, [
       el('span', { class: 'admin-row-number mono', text: pad2(quiz.edition_number) }),
       el('h2', { class: 'admin-row-title' + (titled ? '' : ' is-untitled') }, [
         el('a', {
@@ -124,7 +124,7 @@ import Base from '../../layouts/Base.astro';
 
     const parts = [
       adminNav('dashboard'),
-      el('div', { class: 'admin-head' }, [el('h1', { text: 'Quizzes' }), newBtn]),
+      el('div', { class: 'admin-head bleed' }, [el('h1', { text: 'Quizzes' }), newBtn]),
       errorLine,
     ];
 
@@ -135,7 +135,9 @@ import Base from '../../layouts/Base.astro';
           el('span', { text: 'Title' }),
           el('span', { text: 'Status' }),
         ]),
-        ...quizzes.map((quiz, index) => buildRow(quiz, index === quizzes.length - 1))
+        // Rows live in their own container so the last one can close the
+        // list with :last-child, like every other list on the site.
+        el('div', { class: 'admin-list' }, quizzes.map(buildRow))
       );
     } else {
       parts.push(buildEmpty(create));

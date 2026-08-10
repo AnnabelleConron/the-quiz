@@ -2,7 +2,7 @@
 
    Split by role, not by page. Import order is the cascade order and is
    load-bearing: tokens define the vocabulary, base sets the ground,
-   components are page-agnostic, and the two layout files sit on top.
+   components are page-agnostic, and the two layout files sit  on top.
 
    Only Base.astro imports this file. Nothing imports the parts directly.
 

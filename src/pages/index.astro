@@ -51,7 +51,7 @@ import SiteTop from '../components/SiteTop.astro';
 
   function dateline(quiz) {
     const parts = formatDateline(quiz.publish_at);
-    return el('div', { class: 'dateline mono' }, [
+    return el('div', { class: 'dateline mono bleed' }, [
       el('span', { text: 'No. ' + pad2(quiz.edition_number) }),
       el('span', { class: 'dateline-date', text: parts.date }),
       el('span', { text: parts.weekday }),
@@ -86,8 +86,8 @@ import SiteTop from '../components/SiteTop.astro';
         el('div', { class: 'edition-played' }, [
           el('p', { class: 'label muted', text: 'You played this edition' }),
           el('p', { class: 'score-figure' }, [
-            el('span', { class: 'score-number', text: pad2(completed.score) }),
-            el('span', { class: 'score-total', text: '/16' }),
+            el('span', { class: 'score-number numeral', text: pad2(completed.score) }),
+            el('span', { class: 'score-total numeral', text: '/16' }),
           ]),
           el('a', { class: 'btn', href, text: 'Review your answers' }),
         ])
@@ -191,7 +191,7 @@ import SiteTop from '../components/SiteTop.astro';
             'table. No accounts, no sign-in, nothing to install.',
           '/about',
           'Find out more',
-          'pitch-last'
+          'pitch-last bleed'
         ),
         footer(quiz.publish_at)
       );

@@ -90,8 +90,9 @@ export function renderLogin(root) {
   });
   const errorLine = el('p', { class: 'mono form-error hidden', role: 'alert' });
   const submit = el('button', { type: 'submit', class: 'btn-primary btn-block', text: 'Sign in' });
+  // The page head sits outside the panel, so its zone rule bleeds like every
+  // other page head. Only the fields are panelled.
   const form = el('form', { class: 'admin-login' }, [
-    el('div', { class: 'admin-head' }, [el('h1', { text: 'Editorial' })]),
     field('Email', email),
     field('Password', password),
     errorLine,
@@ -113,7 +114,11 @@ export function renderLogin(root) {
     }
     location.reload();
   });
-  root.replaceChildren(el('header', { class: 'admin-top' }, [adminBrand()]), form);
+  root.replaceChildren(
+    el('header', { class: 'admin-top bleed' }, [adminBrand()]),
+    el('div', { class: 'admin-head bleed' }, [el('h1', { text: 'Editorial' })]),
+    form
+  );
 }
 
 // Returns the session, or renders the login form and returns null.
@@ -136,7 +141,7 @@ export function adminNav(current = null) {
   });
   const link = (href, text, key) =>
     el('a', { href, text, 'aria-current': current && current === key ? 'page' : null });
-  return el('header', { class: 'admin-top' }, [
+  return el('header', { class: 'admin-top bleed' }, [
     adminBrand(),
     el('nav', { class: 'admin-top-links', 'aria-label': 'Editorial' }, [
       link('/admin', 'Dashboard', 'dashboard'),

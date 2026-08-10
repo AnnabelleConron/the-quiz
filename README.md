@@ -61,30 +61,56 @@ There is no Tailwind, no CSS modules, and no component-scoped styles. Astro's sc
 
 ### The tokens are the contract
 
-Nothing outside `tokens.css` declares a raw colour, a raw font size, or a raw border. If a value is needed that is not there, add a token; do not hardcode it at the call site. The four layout files are checked against this and are clean.
+Nothing outside `tokens.css` declares a raw colour, a raw font size, a raw border, a raw leading or a raw measure. If a value is needed that is not there, add a token; do not hardcode it at the call site.
+
+Seven values remain raw in the layout files, and each carries a comment saying why a token would be meaningless:
+
+- the hamburger's own geometry in `.menu-toggle` (its bar width and the gaps between them), which is the drawing of one icon and aligns to nothing
+- the 1px box and negative margin in `.visually-hidden`, which are the clipping idiom itself
+- the 2px underline offset on the active admin nav link, which is optical and specific to one label at one size
+- the `flex-basis` on the editor's Save button, which is a wrapping hint rather than a measure
+
+To check the claim rather than trust it:
+
+```sh
+grep -nE "^\s+[a-z-]+:\s*[^;]*\b[0-9]+(px|ch|rem)" src/styles/{base,components,pages,admin}.css | grep -v "var(--"
+```
+
+Anything that turns up should be a token or carry a justification beside it.
 
 ### The rule system
 
 Every divider on the site is one of three tiers, and each tier means one thing. Using the wrong one is how a design like this comes apart.
 
-| Token | Drawn as | Means |
-| --- | --- | --- |
-| `--rule-zone` | 3px double | A boundary between parts of the page that differ in kind: masthead to dateline, questions to score. |
-| `--rule-section` | 1px solid | A boundary between sections of the same kind. |
-| `--rule-item` | 1px solid, 28% ink | A separator between rows of one list. |
+| Token | Drawn as | Width | Means |
+| --- | --- | --- | --- |
+| `--rule-zone` | 3px double | Full bleed | A boundary between parts of the page that differ in kind: masthead to dateline, questions to score. |
+| `--rule-section` | 1px solid | Inset to the column | A boundary between sections of the same kind. |
+| `--rule-item` | 1px solid, 28% ink | Inset to the column | A separator between rows of one list. |
+
+**Tier decides width as well as weight.** A zone boundary separates parts of the page, so it is the width of the page: every element carrying `--rule-zone` also carries `.bleed`, without exception. Section and item rules divide content and belong to it, so they stay inset and align with the text. A banded ground bleeds for the same reason a zone rule does, its edge being the page's edge.
+
+Closed shapes are exempt, because they are objects rather than dividers: `.editor-confirm` and `.danger-btn` draw their borders at zone weight to say "stop" and stay inside the column.
 
 A fourth, `--rule-component`, is drawn like the section rule but means an edge rather than a division: buttons, mark cells, the bar track. It is named separately so a change to the section rule does not silently redraw every button. `--rule-section-inverse` is the section rule on the ink ground of the admin bar.
 
-Two consequences worth knowing before you edit anything:
+Three consequences worth knowing before you edit anything:
 
-- The last item in a list drops its rule (`:last-child`), so nothing stacks against the section rule that opens whatever comes next.
-- A struck-through archive row is drawn with `--rule-item` as a positioned bar, not `text-decoration: line-through`, so its weight matches every other hairline on the page.
+- **One boundary, one rule.** A boundary is drawn by exactly one of the two elements that meet at it, never both, or the tiers add together into a line belonging to no tier. Where a washed band opens a section, the band's rule wins and the block above drops its closing rule. Anything declaring a bottom rule directly above something declaring a top rule is a bug.
+- **A list closes on a section rule** rather than dropping its separator: the last row still needs a bottom edge, it just needs a heavier one. Suppression is always `:last-child`, never a class, which is why the dashboard rows and the archive rows each sit in a container of their own.
+- A struck-through archive row is drawn with `--rule-hairline` and `--rule-faint` as a positioned bar, not `text-decoration: line-through`, so its weight matches every other hairline on the page.
 
 ### Type
 
 Three families, three jobs, no overlap. The display serif (Bodoni Moda) sets mastheads, category names and large numerals, and never sets a paragraph. The reading serif (Source Serif 4) sets questions, answers and body copy. The monospace (DM Mono) sets every label, number strip and utility control. In the admin the display serif is held back to page titles only.
 
 Each family has its own scale in `tokens.css`: `--fs-label-*` for mono, `--fs-read-*` for the reading serif, `--fs-display-*` for the display serif. The design depends on the distance between the ends of that ladder, so the steps are deliberately far apart.
+
+Two treatments sit on top of that scale and vary by size alone:
+
+**Mastheads** come at exactly two scales. `--fs-masthead-front` is the front page and is used by nothing else; `--fs-masthead-inner` is every inner page, public and admin alike, so the header block is one height wherever you land. They share `--lh-masthead` and the same padding above and below. The masthead's closing rule is `--rule-item` on every page: what sits directly beneath it is still front matter, and the zone boundary comes after that strip rather than before it.
+
+**Display numerals** are one family of objects, applied through the `.numeral` class: one face, one weight, `--lh-numeral` and `--track-display` at every size, from the 132px final score down to a 21px category tally. Anything setting its own leading or tracking on a figure breaks the family.
 
 ### Fonts
 

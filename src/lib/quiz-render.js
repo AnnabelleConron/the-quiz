@@ -269,7 +269,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
 
   const dateline = formatDateline(quiz.publish_at);
   frag.appendChild(
-    el('div', { class: 'dateline mono' }, [
+    el('div', { class: 'dateline mono bleed' }, [
       el('span', { text: 'No. ' + pad2(quiz.edition_number) }),
       el('span', { class: 'dateline-date', text: dateline.date }),
       el('span', { text: dateline.weekday }),
@@ -350,7 +350,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   function buildIncompleteNote() {
     const remaining = TOTAL_QUESTIONS - markedCount();
     const target = firstUnmarked();
-    const note = el('section', { class: 'endnote' }, [
+    const note = el('section', { class: 'endnote bleed' }, [
       el('p', { class: 'label muted', text: "Editor's note" }),
       el('p', {
         class: 'endnote-text',
@@ -400,7 +400,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       fill.style.width = Math.round((correct / total) * 100) + '%';
       return el('div', { class: 'breakdown-row' }, [
         el('p', { class: 'breakdown-name', text: category.name }),
-        el('p', { class: 'breakdown-score' }, [
+        el('p', { class: 'breakdown-score numeral' }, [
           document.createTextNode(String(correct)),
           el('span', { class: 'breakdown-total', text: '/' + total }),
         ]),
@@ -419,8 +419,8 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     const panel = el('section', { class: 'score bleed' }, [
       buildScoreHead(),
       el('p', { class: 'score-figure' }, [
-        el('span', { class: 'score-number', text: pad2(score) }),
-        el('span', { class: 'score-total', text: '/16' }),
+        el('span', { class: 'score-number numeral', text: pad2(score) }),
+        el('span', { class: 'score-total numeral', text: '/16' }),
       ]),
     ]);
 
@@ -432,11 +432,11 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
         el('div', { class: 'score-stats' }, [
           el('div', { class: 'score-stat' }, [
             el('p', { class: 'label muted', text: "Week's average" }),
-            el('p', { class: 'score-stat-value', text: String(avgScore) }),
+            el('p', { class: 'score-stat-value numeral', text: String(avgScore) }),
           ]),
           el('div', { class: 'score-stat' }, [
             el('p', { class: 'label muted', text: 'Players this week' }),
-            el('p', { class: 'score-stat-value', text: String(completionCount) }),
+            el('p', { class: 'score-stat-value numeral', text: String(completionCount) }),
           ]),
         ])
       );
@@ -471,7 +471,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     // An edition withdrawn mid-play is a dead end: submit_quiz refuses it and
     // no amount of retrying will change that, so say so and offer no button.
     if (submitWithdrawn) {
-      return el('section', { class: 'endnote', role: 'alert' }, [
+      return el('section', { class: 'endnote bleed', role: 'alert' }, [
         el('p', { class: 'label muted', text: "Editor's note" }),
         el('p', {
           class: 'endnote-text',
@@ -488,7 +488,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       renderEnd();
       submit();
     });
-    return el('section', { class: 'endnote', role: 'alert' }, [
+    return el('section', { class: 'endnote bleed', role: 'alert' }, [
       el('p', { class: 'label muted', text: "Editor's note" }),
       el('p', {
         class: 'endnote-text',

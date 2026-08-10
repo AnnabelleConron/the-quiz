@@ -82,17 +82,22 @@
      and the block above drops its closing rule. Anything declaring a bottom
      rule directly above something declaring a top rule is a bug. */
 
+  /* Every rule on the site is drawn at this weight except the zone rule,
+     which doubles it. Anything drawing a rule by other means, like the
+     struck archive row, takes its thickness from here so it cannot drift. */
+  --rule-hairline: 1px;
+
   --rule-zone: 3px double var(--ink);
-  --rule-section: 1px solid var(--ink);
-  --rule-item: 1px solid var(--rule-faint);
-  --rule-component: 1px solid var(--ink);
+  --rule-section: var(--rule-hairline) solid var(--ink);
+  --rule-item: var(--rule-hairline) solid var(--rule-faint);
+  --rule-component: var(--rule-hairline) solid var(--ink);
 
   /* The same section rule drawn on the ink ground of the admin bar. */
-  --rule-section-inverse: 1px solid var(--paper-on-ink);
+  --rule-section-inverse: var(--rule-hairline) solid var(--paper-on-ink);
 
   /* An edge that marks an exception rather than a division. Used only by
      the withdrawn status chip in the admin. */
-  --rule-accent: 1px solid var(--accent);
+  --rule-accent: var(--rule-hairline) solid var(--accent);
 
   /* --- Type -----------------------------------------------------------
 
@@ -139,8 +144,13 @@
   --fs-display-4xl: 5.75rem; /* 92px   the home masthead, the played score */
   --fs-display-5xl: 8.25rem; /* 132px  the final score */
 
-  /* Mastheads grow with the viewport between two rungs of the ladder. */
-  --fs-masthead: clamp(var(--fs-display-3xl), 14vw, var(--fs-display-4xl));
+  /* Mastheads come at exactly two scales, and nothing else. Home is the
+     front page and is set larger than anything inside it; every inner page
+     is set the same as every other, so the header block is one height
+     wherever you land. Only the size differs between them: the leading is
+     shared, below. */
+  --fs-masthead-front: clamp(var(--fs-display-3xl), 14vw, var(--fs-display-4xl));
+  --fs-masthead-inner: var(--fs-display-3xl);
 
   /* Tracking. Mono is tracked out, display is tracked in. */
   --track-numeral: 0.08em;
@@ -150,13 +160,16 @@
   --track-display: -0.02em;
   --track-display-tight: -0.04em;
 
-  /* Leading. */
-  --lh-numeral: 0.84;
+  /* Leading. --lh-numeral and --lh-masthead are each used at every size
+     their treatment appears at, so a figure or a masthead is the same
+     object large or small. */
+  --lh-numeral: 0.9;
   --lh-masthead: 0.9;
   --lh-display: 1;
   --lh-tight: 1.2;
   --lh-read: 1.4;
   --lh-loose: 1.45;
+  --lh-prose: 1.5;
 
   /* --- Space ---------------------------------------------------------- */
 
@@ -168,6 +181,7 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
+  --space-9: 96px;
 
   /* Page gutter, wider from small-tablet width up. */
   --gutter: 18px;
@@ -179,6 +193,13 @@
   --measure-admin: 980px;
   --measure-editor: 860px;
 
+  /* Widths of things inside a column, rather than of columns themselves. */
+  --measure-form: 380px; /* the sign-in panel */
+  --measure-field: 240px; /* a form field before its grid wraps */
+  --measure-note: 42ch; /* a paragraph of explanation, measured in text */
+  --measure-stat: 160px; /* an analytics cell before its grid wraps */
+  --measure-bar: 160px; /* a rate bar, so long rows do not stretch it */
+
   /* The sticky bars. Named because anchor offsets depend on them. */
   --bar-height: 46px;
   --bar-height-admin: 44px;
@@ -186,12 +207,25 @@
   /* Minimum tap target. */
   --tap: 44px;
 
-  /* The mono number column that opens a list row: contents, questions, menu
-     entries. The admin and the archive set their own, denser or larger. */
+  /* Number columns. Two, and the difference is what they hold.
+
+     --col-number takes a mono index sitting beside body text or a form
+     field: contents rows, questions, menu entries, editor questions.
+
+     --col-number-wide takes an edition number set as a display numeral,
+     which is several times the size: archive rows and dashboard rows. */
   --col-number: 26px;
+  --col-number-wide: 62px;
 
   /* Score and rate bars. */
   --bar-thickness: 7px;
+
+  /* Two lines of a question before the field grows. */
+  --field-textarea-min: 74px;
+
+  /* Focus. One ring everywhere; only its colour inverts on the ink bar. */
+  --focus-ring: 2px solid var(--focus);
+  --focus-offset: 2px;
 }
 
 @media (min-width: 480px) {
