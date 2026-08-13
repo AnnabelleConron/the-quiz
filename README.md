@@ -129,6 +129,7 @@ The schema, functions, RLS policies, and grants live in `supabase/migrations/` a
 Key properties:
 
 - Anonymous visitors can read only published quizzes (or scheduled ones whose publish time has passed). Drafts and withdrawn editions are not retrievable in any way.
+- The public pages state that same predicate in the query as well, through `onlyVisible()` in `src/lib/quiz-render.js`, rather than leaving it to RLS. The admin policy on `quizzes` is `for all using (true)`, so a signed-in admin browsing the site would otherwise be shown drafts and withdrawn editions as though they were live, on the quiz permalink, the home page, the archive and its count. `/admin/preview` deliberately does not go through it: it fetches by id with `fetchQuizById()`, which is the point of a preview. The filter is a view correction, not a security boundary; what anyone is allowed to read is still decided by RLS on the server.
 - The public client cannot read or write raw response rows. Submissions go through the `submit_quiz` function, which validates the marks, computes the score server side, and inserts everything in one transaction, once per device per quiz.
 - Stats come from `get_question_stats`, `get_quiz_stats`, and `get_archive_stats`.
 - A trigger blocks scheduling or publishing a quiz unless it has exactly 4 named categories and 16 complete questions, and blocks deleting content from anything that is not a draft. Deleting a whole quiz cascades cleanly at any status.
@@ -148,6 +149,8 @@ The `status` column holds four values, but the admin shows a **derived** state, 
 | `scheduled` | `scheduled`, date ahead | no | Unschedule, Delete edition |
 | `live` | `published`, or `scheduled` with the date passed | yes | Unpublish, Delete edition |
 | `unpublished` | `unpublished` | no | Republish, Delete edition |
+
+**A publish date on a draft does nothing on its own.** Setting the date and saving does not queue an edition; only Schedule does. That is the mistake that costs a Saturday morning, so the editor says so three times over: a note beside the publish field while the edition is a draft, a save confirmation that reads "Saved as a draft. It will not appear on the site until you press Schedule." rather than the finished-sounding "Saved, all changes stored.", and an action row where Schedule carries the primary treatment while Save steps back to an ordinary button. All three key off the derived state, so they appear and disappear together: on a scheduled, live or withdrawn edition the note is gone and Save is primary again, because nothing is outstanding.
 
 Withdrawing takes an edition off the site: gone from home, gone from the archive, and its permalink says it is not available. Nothing is destroyed. Responses and completions stay exactly as they were and come back if it is republished, and the content guard stays on, so its questions cannot be deleted while it is withdrawn.
 

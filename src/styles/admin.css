@@ -311,6 +311,17 @@
   color: var(--grey);
 }
 
+/* A note about the field above it, not a second label: reading size, set in
+   the reading face, and quiet. It sits under the control inside the field's
+   grid cell. */
+.field-note {
+  margin-top: var(--space-2);
+  max-width: var(--measure-note);
+  font-size: var(--fs-read-sm);
+  line-height: var(--lh-prose);
+  color: var(--grey);
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--measure-field), 1fr));
@@ -392,9 +403,10 @@
   padding-top: var(--space-5);
 }
 
-/* Save takes the remaining width of the row. The basis is a wrapping hint,
-   the width it should not shrink below before the row breaks, rather than a
-   measure anything aligns to. */
+/* The primary action takes the remaining width of the row, whichever button
+   is carrying it: Save on a scheduled or live edition, Schedule on a draft.
+   The basis is a wrapping hint, the width it should not shrink below before
+   the row breaks, rather than a measure anything aligns to. */
 .editor-actions .btn-primary {
   flex: 1 1 180px;
 }

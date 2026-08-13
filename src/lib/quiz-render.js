@@ -82,24 +82,49 @@ export function formatNextEdition(iso) {
   });
 }
 
+// The public view, stated in the query rather than left to RLS alone.
+//
+// Anonymous visitors are already held to this by the anon policy on quizzes,
+// but the admin policy is `for all using (true)`, so a signed-in admin
+// browsing the public site would otherwise be served drafts and withdrawn
+// editions as though they were live. Every public read of quizzes goes
+// through here, so the public pages show the public view to everyone.
+//
+// The admin preview deliberately does not: it fetches by id through
+// fetchQuizById in admin.js and passes the quiz straight to initQuiz, which
+// is the whole point of a preview.
+//
+// The predicate is the one the anon policy and is_quiz_visible() use.
+// Judgment call: a PostgREST filter cannot call now(), so the cutoff is the
+// browser's clock rather than the server's. A wrong clock only shifts what an
+// admin is shown on these pages; what anyone is allowed to read is still
+// decided by RLS on the server.
+export function onlyVisible(query) {
+  const now = new Date().toISOString();
+  return query.or('status.eq.published,and(status.eq.scheduled,publish_at.lte.' + now + ')');
+}
+
 export async function fetchQuizByEdition(edition) {
-  const { data, error } = await supabase
-    .from('quizzes')
-    .select(
-      'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
-    )
-    .eq('edition_number', edition)
-    .maybeSingle();
+  const { data, error } = await onlyVisible(
+    supabase
+      .from('quizzes')
+      .select(
+        'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
+      )
+      .eq('edition_number', edition)
+  ).maybeSingle();
   if (error) throw error;
   return data;
 }
 
 export async function fetchLatestQuiz() {
-  const { data, error } = await supabase
-    .from('quizzes')
-    .select(
-      'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
-    )
+  const { data, error } = await onlyVisible(
+    supabase
+      .from('quizzes')
+      .select(
+        'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
+      )
+  )
     .order('edition_number', { ascending: false })
     .limit(1);
   if (error) throw error;

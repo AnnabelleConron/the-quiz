@@ -56,6 +56,19 @@ import Base from '../../layouts/Base.astro';
     publishInput.addEventListener('change', refreshPublishLabel);
     refreshPublishLabel();
 
+    // Setting a date is not queueing an edition, and nothing about the field
+    // says so. The note stands beside the field it is about, and is shown only
+    // while the edition is a draft, since it stops being true the moment it is
+    // scheduled. renderActions() decides that, along with everything else that
+    // turns on the state.
+    const publishNote = el('p', {
+      class: 'field-note',
+      id: 'publish-note',
+      text: 'A draft does not publish on its own. This date is when it goes out once you press Schedule.',
+    });
+    publishInput.setAttribute('aria-describedby', 'publish-note');
+    const publishCell = el('div', {}, [publishField, publishNote]);
+
     const categoryInputs = new Map();
     const questionInputs = new Map();
 
@@ -63,7 +76,7 @@ import Base from '../../layouts/Base.astro';
       const nameInput = el('input', {
         type: 'text',
         value: category.name,
-        placeholder: 'e.g. Add One Letter',
+        placeholder: 'Write category name',
       });
       categoryInputs.set(category.id, nameInput);
 
@@ -75,13 +88,13 @@ import Base from '../../layouts/Base.astro';
       const questionFields = catQuestions.map((q) => {
         const questionArea = el('textarea', {
           rows: '2',
-          placeholder: 'Write the question in full',
+          placeholder: 'Write question',
         });
         questionArea.value = q.question_text;
         const answerInput = el('input', {
           type: 'text',
           value: q.answer_text,
-          placeholder: 'Short answer as printed',
+          placeholder: 'Write answer',
         });
         questionInputs.set(q.id, { question: questionArea, answer: answerInput });
         return el('div', { class: 'editor-question' }, [
@@ -139,8 +152,16 @@ import Base from '../../layouts/Base.astro';
     // not whether it is there.
     function renderActions() {
       const state = editionState(quiz);
+      const isDraft = state === 'draft';
+      // Emphasis follows what is outstanding. On a draft nothing reaches the
+      // site until Schedule is pressed, so Schedule takes the primary
+      // treatment and Save steps back. Once the edition is scheduled or live
+      // there is nothing outstanding and Save is the primary action again.
+      saveBtn.className = isDraft ? '' : 'btn-primary';
+      scheduleBtn.className = isDraft ? 'btn-primary' : '';
+      publishNote.classList.toggle('hidden', !isDraft);
       const buttons = [saveBtn, previewLink];
-      if (state === 'draft') buttons.push(scheduleBtn);
+      if (isDraft) buttons.push(scheduleBtn);
       else if (state === 'scheduled') buttons.push(unscheduleBtn);
       else if (state === 'unpublished') buttons.push(republishBtn);
       else buttons.push(unpublishBtn);
@@ -315,7 +336,16 @@ import Base from '../../layouts/Base.astro';
       issuesBox.classList.add('hidden');
       setStatus('Saving.');
       const ok = await save();
-      if (ok) setStatus('Saved, all changes stored.');
+      // "Saved, all changes stored" is accurate once an edition is queued or
+      // out, and misleading before that: a saved draft is not going anywhere.
+      // save() has already re-derived the state, so this reads the current one.
+      if (ok) {
+        setStatus(
+          editionState(quiz) === 'draft'
+            ? 'Saved as a draft. It will not appear on the site until you press Schedule.'
+            : 'Saved, all changes stored.'
+        );
+      }
       saveBtn.disabled = false;
     });
 
@@ -539,7 +569,7 @@ import Base from '../../layouts/Base.astro';
       el('section', { class: 'editor-meta' }, [
         el('p', { class: 'label muted', text: 'Edition details' }),
         el('div', { class: 'field-grid' }, [
-          publishField,
+          publishCell,
           field('Title, optional', titleInput),
         ]),
       ]),

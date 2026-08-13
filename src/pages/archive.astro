@@ -17,7 +17,7 @@ import SiteTop from '../components/SiteTop.astro';
 
 <script>
   import { supabase } from '../lib/supabase.js';
-  import { el, pad2, formatNextEdition } from '../lib/quiz-render.js';
+  import { el, pad2, formatNextEdition, onlyVisible } from '../lib/quiz-render.js';
   import { loadProgress } from '../lib/session.js';
 
   const root = document.getElementById('archive-app');
@@ -60,10 +60,13 @@ import SiteTop from '../components/SiteTop.astro';
     if (!root) return;
     root.textContent = 'Loading the archive.';
     try {
-      const { data: quizzes, error } = await supabase
-        .from('quizzes')
-        .select('id, edition_number, publish_at, categories(name, sort_order)')
-        .order('edition_number', { ascending: false });
+      // The count strip below is the length of this list, so filtering the
+      // query is what keeps the count public too.
+      const { data: quizzes, error } = await onlyVisible(
+        supabase
+          .from('quizzes')
+          .select('id, edition_number, publish_at, categories(name, sort_order)')
+      ).order('edition_number', { ascending: false });
       if (error) throw error;
 
       const masthead = el('div', { class: 'masthead' }, [
