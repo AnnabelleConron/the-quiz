@@ -284,8 +284,7 @@
 /* No closing rule: the first category band opens with one of its own, and a
    boundary is drawn once. */
 .contents {
-  padding-top: var(--space-6);
-  padding-bottom: var(--space-5);
+  padding-block: var(--space-6);
 }
 
 .contents-list {
@@ -312,18 +311,6 @@
 
 .contents-name {
   font-size: var(--fs-display-lg);
-}
-
-.contents-note {
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: var(--rule-item);
-  color: var(--grey);
-}
-
-.social-proof {
-  margin-top: var(--space-3);
-  color: var(--grey);
 }
 
 /* --- Category bands --------------------------------------------------- */

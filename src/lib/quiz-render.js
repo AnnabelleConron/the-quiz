@@ -284,31 +284,9 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     ])
   );
 
-  const contents = el('section', { class: 'contents' }, [
-    el('ol', { class: 'contents-list' }, contentsRows),
-    el('p', {
-      class: 'contents-note',
-      text:
-        'Reveal each answer once the table has settled on one, then tick it or cross it. ' +
-        'The score is set when all sixteen are marked.',
-    }),
-  ]);
-
-  // Social proof: real numbers or nothing. Hidden only at zero completions.
-  const playedCount = quizStats ? Number(quizStats.completion_count) : 0;
-  if (playedCount >= 1) {
-    contents.appendChild(
-      el('p', {
-        class: 'social-proof mono',
-        text:
-          playedCount === 1
-            ? '1 group has played this week'
-            : playedCount + ' groups have played this week',
-      })
-    );
-  }
-
-  frag.appendChild(contents);
+  frag.appendChild(
+    el('section', { class: 'contents' }, [el('ol', { class: 'contents-list' }, contentsRows)])
+  );
 
   const isCompleted = Boolean(progress.completed);
   const markButtons = [];
