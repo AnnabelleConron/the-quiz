@@ -27,21 +27,6 @@ import SiteTop from '../components/SiteTop.astro';
 
   const root = document.getElementById('home-app');
 
-  const ONES = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
-    'nineteen',
-  ];
-  const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-
-  // Counts are set in words, the way a masthead sets them. Past ninety-nine
-  // the digits are clearer, so it falls back.
-  function inWords(n) {
-    if (n > 99) return String(n);
-    const word = n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '');
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }
-
   function masthead() {
     return el('div', { class: 'masthead masthead-home' }, [
       el('h1', { class: 'masthead-title', text: 'The Quizz' }),
@@ -118,44 +103,19 @@ import SiteTop from '../components/SiteTop.astro';
     );
   }
 
-  function pitch(label, title, text, href, action, modifier) {
+  function pitch(label, title, href, action, modifier) {
     return el('section', { class: 'pitch ' + modifier }, [
       el('p', { class: 'label muted', text: label }),
       el('h2', { class: 'pitch-title', text: title }),
-      el('p', { class: 'pitch-text', text }),
       el('a', { class: 'btn', href, text: action }),
     ]);
-  }
-
-  // Back issues are every edition except the one on the front page.
-  function backIssuesCopy(total) {
-    const back = Math.max(total - 1, 0);
-    if (back === 0) {
-      return {
-        title: 'The first edition',
-        text:
-          'This is the first one. Every edition stays online from here, in full, with its ' +
-          'answers, ready to be played again.',
-      };
-    }
-    return {
-      title: inWords(back) + (back === 1 ? ' back issue' : ' back issues'),
-      text:
-        'Every past edition stays online, in full, with its answers. Good for a rainy ' +
-        'afternoon or a long drive.',
-    };
   }
 
   (async () => {
     if (!root) return;
     root.textContent = 'Loading this week.';
     try {
-      const [quiz, { count }] = await Promise.all([
-        fetchLatestQuiz(),
-        import('../lib/supabase.js').then(({ supabase }) =>
-          supabase.from('quizzes').select('id', { count: 'exact', head: true })
-        ),
-      ]);
+      const quiz = await fetchLatestQuiz();
 
       if (!quiz) {
         root.replaceChildren(
@@ -174,24 +134,13 @@ import SiteTop from '../components/SiteTop.astro';
 
       const categories = [...(quiz.categories || [])].sort((a, b) => a.sort_order - b.sort_order);
       const completed = loadProgress(quiz.id).completed;
-      const total = typeof count === 'number' ? count : 1;
-      const back = backIssuesCopy(total);
 
       root.replaceChildren(
         masthead(),
         dateline(quiz),
         editionSection(quiz, categories, completed),
-        pitch('Past quizzes', back.title, back.text, '/archive', 'Visit the archives', ''),
-        pitch(
-          'About',
-          'One quiz, once a week',
-          'The Quizz is written by hand and published every Saturday morning. Four categories, ' +
-            'sixteen questions, meant to be played out loud with one phone passed around a ' +
-            'table. No accounts, no sign-in, nothing to install.',
-          '/about',
-          'Find out more',
-          'pitch-last bleed'
-        ),
+        pitch('Past quizzes', 'Past quiz editions', '/archive', 'Visit the archives', ''),
+        pitch('About', 'One quiz, once a week', '/about', 'Find out more', 'pitch-last bleed'),
         footer(quiz.publish_at)
       );
     } catch (err) {

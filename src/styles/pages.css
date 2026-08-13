@@ -109,7 +109,7 @@
 }
 
 /* The two sections below the fold: what is behind this week, and what the
-   paper is. Same shape, secondary action each. */
+   paper is. Same shape each, a label, a heading and one action. */
 .pitch {
   padding-block: var(--space-6);
   border-bottom: var(--rule-section);
@@ -124,8 +124,17 @@
   font-size: var(--fs-display-xl);
 }
 
+/* The interval the body paragraph used to carry in its bottom margin. With
+   the paragraph gone the action owns it, so the heading and the button do
+   not collapse against each other. */
+.pitch .btn {
+  margin-top: var(--space-5);
+}
+
+/* Only the "no edition yet" state still runs a paragraph, where it is the
+   last thing in the section, so the section's own padding closes it. */
 .pitch-text {
-  margin: var(--space-3) 0 var(--space-5);
+  margin-top: var(--space-3);
   line-height: var(--lh-loose);
 }
 
