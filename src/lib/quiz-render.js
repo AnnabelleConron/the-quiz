@@ -63,25 +63,6 @@ export function formatDateline(iso) {
   };
 }
 
-// The standing promise on the footer of every page that knows a date.
-// Editions publish weekly on Saturday mornings, so the next one is seven
-// days on from the one in hand.
-//
-// Returns null once that date has passed, which happens whenever the newest
-// edition is withheld and the page falls back to an older one. Promising a
-// Saturday that has already gone is worse than saying nothing, so the
-// callers drop the line.
-export function formatNextEdition(iso) {
-  const next = new Date(new Date(iso).getTime() + 7 * 86400 * 1000);
-  if (next.getTime() <= Date.now()) return null;
-  return next.toLocaleDateString('en-AU', {
-    timeZone: 'Australia/Sydney',
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-}
-
 // The public view, stated in the query rather than left to RLS alone.
 //
 // Anonymous visitors are already held to this by the anon policy on quizzes,
@@ -109,7 +90,7 @@ export async function fetchQuizByEdition(edition) {
     supabase
       .from('quizzes')
       .select(
-        'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
+        'id, edition_number, publish_at, categories(id, name, description, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
       )
       .eq('edition_number', edition)
   ).maybeSingle();
@@ -121,8 +102,10 @@ export async function fetchLatestQuiz() {
   const { data, error } = await onlyVisible(
     supabase
       .from('quizzes')
+      // No description here: home lists category names only, so the column
+      // this page has no use for is not fetched.
       .select(
-        'id, edition_number, title, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
+        'id, edition_number, publish_at, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
       )
   )
     .order('edition_number', { ascending: false })
@@ -693,17 +676,24 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     const last = catQuestions[catQuestions.length - 1];
     const range = first && last ? pad2(first.sort_order) + '–' + pad2(last.sort_order) : '';
 
-    const section = el('section', { class: 'category' }, [
-      el('header', { class: 'category-header bleed' }, [
-        el('div', { class: 'category-meta mono' }, [
-          el('span', {
-            text: 'Category ' + pad2(index + 1) + ' of ' + pad2(categories.length),
-          }),
-          el('span', { text: range ? 'Q' + range : '' }),
-        ]),
-        el('h2', { class: 'category-name', text: category.name }),
+    const header = el('header', { class: 'category-header bleed' }, [
+      el('div', { class: 'category-meta mono' }, [
+        el('span', {
+          text: 'Category ' + pad2(index + 1) + ' of ' + pad2(categories.length),
+        }),
+        el('span', { text: range ? 'Q' + range : '' }),
       ]),
+      el('h2', { class: 'category-name', text: category.name }),
     ]);
+
+    // The explainer is optional. Categories that carry one say how their
+    // questions work, under the name and inside the same band; categories
+    // that do not get no element at all, so nothing holds space for it.
+    if (category.description) {
+      header.appendChild(el('p', { class: 'category-note', text: category.description }));
+    }
+
+    const section = el('section', { class: 'category' }, [header]);
     for (const q of catQuestions) section.appendChild(buildQuestion(q));
     frag.appendChild(section);
   });

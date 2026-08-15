@@ -338,6 +338,18 @@
   font-size: var(--fs-display-lg);
 }
 
+/* The optional explainer, under the name and inside the same band. Reading
+   face against the name's display face, body size against its display size,
+   and held to a measure so two or three lines break like prose rather than
+   running the width of the band. Only rendered when there is one. */
+.category-note {
+  margin-top: var(--space-2);
+  max-width: var(--measure-note);
+  font-size: var(--fs-read);
+  line-height: var(--lh-prose);
+  color: var(--grey);
+}
+
 /* --- Questions -------------------------------------------------------- */
 
 .question {

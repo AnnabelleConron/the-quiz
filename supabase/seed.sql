@@ -11,12 +11,19 @@ declare
   v_quiz uuid;
   v_cat uuid;
 begin
-  insert into quizzes (edition_number, title, publish_at, status)
-  values (1, 'Sample edition', timestamptz '2026-08-01 06:00:00+10', 'draft')
+  insert into quizzes (edition_number, publish_at, status)
+  values (1, timestamptz '2026-08-01 06:00:00+10', 'draft')
   returning id into v_quiz;
 
-  insert into categories (quiz_id, name, sort_order)
-  values (v_quiz, 'Geography', 1) returning id into v_cat;
+  -- One category carries an explainer and the rest do not, which is the
+  -- shape a real edition takes: the column is optional.
+  insert into categories (quiz_id, name, description, sort_order)
+  values (
+    v_quiz,
+    'Geography',
+    'Places, borders and the odd river. Nothing here needs a map.',
+    1
+  ) returning id into v_cat;
   insert into questions (quiz_id, category_id, sort_order, question_text, answer_text) values
     (v_quiz, v_cat, 1, 'What is the capital of Canada?', 'Ottawa'),
     (v_quiz, v_cat, 2, 'Which river flows through Cairo?', 'The Nile'),

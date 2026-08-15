@@ -1,6 +1,6 @@
 # The Quizz
 
-A weekly quiz in the style of Australian newspaper quizzes. A new edition is published every Saturday with 4 categories and 16 questions. Groups play together on one device, reveal answers upside down, mark themselves with a tick or a cross, and submit once per device per quiz.
+A quiz in the style of Australian newspaper quizzes, published on Saturday mornings, with 4 categories and 16 questions an edition. It is a hobby, not a wire service: editions come out on Saturdays but not every Saturday, so no copy on the site promises a weekly cadence and nothing names a future date. Groups play together on one device, reveal answers upside down, mark themselves with a tick or a cross, and submit once per device per quiz.
 
 Static Astro frontend on Cloudflare Pages, Supabase (Postgres, Auth, Row Level Security) as the only backend. Quiz content and stats are fetched client side at runtime, so new editions and live stats never require a rebuild.
 
@@ -132,6 +132,8 @@ Key properties:
 - The public pages state that same predicate in the query as well, through `onlyVisible()` in `src/lib/quiz-render.js`, rather than leaving it to RLS. The admin policy on `quizzes` is `for all using (true)`, so a signed-in admin browsing the site would otherwise be shown drafts and withdrawn editions as though they were live, on the quiz permalink, the home page, the archive and its count. `/admin/preview` deliberately does not go through it: it fetches by id with `fetchQuizById()`, which is the point of a preview. The filter is a view correction, not a security boundary; what anyone is allowed to read is still decided by RLS on the server.
 - The public client cannot read or write raw response rows. Submissions go through the `submit_quiz` function, which validates the marks, computes the score server side, and inserts everything in one transaction, once per device per quiz.
 - Stats come from `get_question_stats`, `get_quiz_stats`, and `get_archive_stats`.
+- `categories.description` is an optional one-line explainer of how a category's questions work, shown under the category name where its section begins on the quiz page and nowhere else. It is never required: the completeness trigger counts names and questions only, so an edition with all four left blank still schedules.
+- An edition is identified by its number alone. There is no title column and no title field.
 - A trigger blocks scheduling or publishing a quiz unless it has exactly 4 named categories and 16 complete questions, and blocks deleting content from anything that is not a draft. Deleting a whole quiz cascades cleanly at any status.
 - A trigger blocks returning an edition to `draft` once it has gone out or has recorded scores. Withdrawing is the way back from live, and it keeps the content guard on.
 
@@ -150,7 +152,7 @@ The `status` column holds four values, but the admin shows a **derived** state, 
 | `live` | `published`, or `scheduled` with the date passed | yes | Unpublish, Delete edition |
 | `unpublished` | `unpublished` | no | Republish, Delete edition |
 
-**A publish date on a draft does nothing on its own.** Setting the date and saving does not queue an edition; only Schedule does. That is the mistake that costs a Saturday morning, so the editor says so three times over: a note beside the publish field while the edition is a draft, a save confirmation that reads "Saved as a draft. It will not appear on the site until you press Schedule." rather than the finished-sounding "Saved, all changes stored.", and an action row where Schedule carries the primary treatment while Save steps back to an ordinary button. All three key off the derived state, so they appear and disappear together: on a scheduled, live or withdrawn edition the note is gone and Save is primary again, because nothing is outstanding.
+**A publish date on a draft does nothing on its own.** Setting the date and saving does not queue an edition; only Schedule does. That is the mistake that costs a Saturday morning, so the editor says so twice over: a save confirmation that reads "Saved as a draft. It will not appear on the site until you press Schedule." rather than the finished-sounding "Saved, all changes stored.", and an action row where Schedule carries the primary treatment while Save steps back to an ordinary button. Both key off the derived state, so on a scheduled, live or withdrawn edition Save is primary again and the confirmation reads plainly, because nothing is outstanding.
 
 Withdrawing takes an edition off the site: gone from home, gone from the archive, and its permalink says it is not available. Nothing is destroyed. Responses and completions stay exactly as they were and come back if it is republished, and the content guard stays on, so its questions cannot be deleted while it is withdrawn.
 

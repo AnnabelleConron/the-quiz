@@ -213,7 +213,7 @@
      field: contents rows, questions, menu entries, editor questions.
 
      --col-number-wide takes an edition number set as a display numeral,
-     which is several times the size: archive rows and dashboard rows. */
+     which is several times the size: archive rows. */
   --col-number: 26px;
   --col-number-wide: 62px;
 

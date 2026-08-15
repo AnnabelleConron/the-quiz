@@ -1,5 +1,6 @@
 ---
-// Quiz editor: 4 category names and 16 question and answer pairs.
+// Quiz editor: a publish date, 4 category names with optional explainers,
+// and 16 question and answer pairs.
 // Save keeps ids stable (update in place) so existing responses stay linked.
 // The Schedule button refuses to schedule while anything is empty and lists
 // what is missing. The database trigger enforces the same rule.
@@ -33,11 +34,6 @@ import Base from '../../layouts/Base.astro';
     const categories = [...quiz.categories].sort((a, b) => a.sort_order - b.sort_order);
     const questions = [...quiz.questions].sort((a, b) => a.sort_order - b.sort_order);
 
-    const titleInput = el('input', {
-      type: 'text',
-      value: quiz.title || '',
-      placeholder: 'Left blank on most editions',
-    });
     const publishInput = el('input', {
       type: 'datetime-local',
       class: 'field-mono',
@@ -56,19 +52,6 @@ import Base from '../../layouts/Base.astro';
     publishInput.addEventListener('change', refreshPublishLabel);
     refreshPublishLabel();
 
-    // Setting a date is not queueing an edition, and nothing about the field
-    // says so. The note stands beside the field it is about, and is shown only
-    // while the edition is a draft, since it stops being true the moment it is
-    // scheduled. renderActions() decides that, along with everything else that
-    // turns on the state.
-    const publishNote = el('p', {
-      class: 'field-note',
-      id: 'publish-note',
-      text: 'A draft does not publish on its own. This date is when it goes out once you press Schedule.',
-    });
-    publishInput.setAttribute('aria-describedby', 'publish-note');
-    const publishCell = el('div', {}, [publishField, publishNote]);
-
     const categoryInputs = new Map();
     const questionInputs = new Map();
 
@@ -78,7 +61,15 @@ import Base from '../../layouts/Base.astro';
         value: category.name,
         placeholder: 'Write category name',
       });
-      categoryInputs.set(category.id, nameInput);
+      // Optional, and the only optional field in the editor. It is never
+      // named by the completeness check, so an edition schedules with all
+      // four left blank.
+      const descriptionArea = el('textarea', {
+        rows: '2',
+        placeholder: 'Explain the category',
+      });
+      descriptionArea.value = category.description || '';
+      categoryInputs.set(category.id, { name: nameInput, description: descriptionArea });
 
       const catQuestions = questions.filter((q) => q.category_id === category.id);
       const first = catQuestions[0];
@@ -114,6 +105,7 @@ import Base from '../../layouts/Base.astro';
           el('span', { class: 'muted', text: range ? 'Q' + range : '' }),
         ]),
         field('Category name', nameInput, 'editor-category-name'),
+        field('Explanation, optional', descriptionArea, 'editor-category-note'),
         ...questionFields,
       ]);
     });
@@ -159,7 +151,6 @@ import Base from '../../layouts/Base.astro';
       // there is nothing outstanding and Save is the primary action again.
       saveBtn.className = isDraft ? '' : 'btn-primary';
       scheduleBtn.className = isDraft ? 'btn-primary' : '';
-      publishNote.classList.toggle('hidden', !isDraft);
       const buttons = [saveBtn, previewLink];
       if (isDraft) buttons.push(scheduleBtn);
       else if (state === 'scheduled') buttons.push(unscheduleBtn);
@@ -232,13 +223,15 @@ import Base from '../../layouts/Base.astro';
 
     function collect() {
       return {
-        title: titleInput.value.trim() || null,
         publishAt: parseSydneyInput(publishInput.value),
         categories: categories.map((c) => ({
           id: c.id,
           quiz_id: quiz.id,
           sort_order: c.sort_order,
-          name: categoryInputs.get(c.id).value.trim(),
+          name: categoryInputs.get(c.id).name.value.trim(),
+          // An emptied explainer is written back as null rather than an empty
+          // string, so "has one" is a single test everywhere downstream.
+          description: categoryInputs.get(c.id).description.value.trim() || null,
         })),
         questions: questions.map((q) => ({
           id: q.id,
@@ -257,7 +250,10 @@ import Base from '../../layouts/Base.astro';
       const issues = [];
       data.categories.forEach((c, i) => {
         if (!c.name) {
-          issues.push({ label: 'Category ' + (i + 1) + ' name', input: categoryInputs.get(c.id) });
+          issues.push({
+            label: 'Category ' + (i + 1) + ' name',
+            input: categoryInputs.get(c.id).name,
+          });
         }
       });
       data.questions.forEach((q) => {
@@ -306,7 +302,7 @@ import Base from '../../layouts/Base.astro';
       }
       const { error: quizError } = await supabase
         .from('quizzes')
-        .update({ title: data.title, publish_at: data.publishAt.toISOString() })
+        .update({ publish_at: data.publishAt.toISOString() })
         .eq('id', quiz.id);
       if (quizError) {
         setStatus('Save failed: ' + quizError.message);
@@ -568,10 +564,9 @@ import Base from '../../layouts/Base.astro';
       issuesBox,
       el('section', { class: 'editor-meta' }, [
         el('p', { class: 'label muted', text: 'Edition details' }),
-        el('div', { class: 'field-grid' }, [
-          publishCell,
-          field('Title, optional', titleInput),
-        ]),
+        // One field, so no grid. The date is all an edition carries besides
+        // its number.
+        publishField,
       ]),
       ...categoryBlocks,
       el('div', { class: 'editor-foot bleed' }, [statusLine, confirmBox, actionsRow])

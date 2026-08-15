@@ -71,15 +71,13 @@ import Base from '../../layouts/Base.astro';
   }
 
   function buildRow(quiz) {
-    // A title is optional on most editions. Without one the row is named by
-    // its number alone, and the title cell says so quietly.
-    const titled = Boolean(quiz.title);
+    // An edition is its number. The row is named once, and that name is the
+    // way into the editor.
     return el('div', { class: 'admin-row' }, [
-      el('span', { class: 'admin-row-number mono', text: pad2(quiz.edition_number) }),
-      el('h2', { class: 'admin-row-title' + (titled ? '' : ' is-untitled') }, [
+      el('h2', { class: 'admin-row-title' }, [
         el('a', {
           href: '/admin/edit?id=' + quiz.id,
-          text: titled ? quiz.title : 'Untitled',
+          text: 'Edition ' + pad2(quiz.edition_number),
         }),
       ]),
       statusChip(quiz),
@@ -105,7 +103,7 @@ import Base from '../../layouts/Base.astro';
   async function renderDashboard() {
     const { data: quizzes, error } = await supabase
       .from('quizzes')
-      .select('id, edition_number, title, status, publish_at')
+      .select('id, edition_number, status, publish_at')
       .order('edition_number', { ascending: false });
     if (error) {
       root.replaceChildren(adminNav('dashboard'), el('p', { class: 'load-error', text: 'Could not load quizzes.' }));
@@ -126,8 +124,7 @@ import Base from '../../layouts/Base.astro';
     if (quizzes.length > 0) {
       parts.push(
         el('div', { class: 'admin-table-head mono' }, [
-          el('span', { text: 'No.' }),
-          el('span', { text: 'Title' }),
+          el('span', { text: 'Edition' }),
           el('span', { text: 'Status' }),
         ]),
         // Rows live in their own container so the last one can close the

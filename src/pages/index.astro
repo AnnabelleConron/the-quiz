@@ -16,13 +16,7 @@ import SiteTop from '../components/SiteTop.astro';
 </Base>
 
 <script>
-  import {
-    fetchLatestQuiz,
-    formatDateline,
-    formatNextEdition,
-    pad2,
-    el,
-  } from '../lib/quiz-render.js';
+  import { fetchLatestQuiz, formatDateline, pad2, el } from '../lib/quiz-render.js';
   import { loadProgress } from '../lib/session.js';
 
   const root = document.getElementById('home-app');
@@ -91,18 +85,6 @@ import SiteTop from '../components/SiteTop.astro';
     return section;
   }
 
-  // The next-edition line is dropped once its date has gone, which happens
-  // when the newest edition is withheld and this page falls back to an
-  // older one. Real information or nothing.
-  function footer(publishAt) {
-    const next = formatNextEdition(publishAt);
-    return el(
-      'footer',
-      { class: 'site-footer' },
-      next ? [el('p', { class: 'label muted', text: 'Next edition: ' + next })] : []
-    );
-  }
-
   function pitch(label, title, href, action, modifier) {
     return el('section', { class: 'pitch ' + modifier }, [
       el('p', { class: 'label muted', text: label }),
@@ -125,7 +107,7 @@ import SiteTop from '../components/SiteTop.astro';
             el('h2', { class: 'pitch-title', text: 'The first edition is on its way' }),
             el('p', {
               class: 'pitch-text',
-              text: 'A new quiz is published every Saturday morning.',
+              text: 'Quizzes are published on Saturday mornings.',
             }),
           ])
         );
@@ -140,8 +122,7 @@ import SiteTop from '../components/SiteTop.astro';
         dateline(quiz),
         editionSection(quiz, categories, completed),
         pitch('Past quizzes', 'Past quiz editions', '/archive', 'Visit the archives', ''),
-        pitch('About', 'One quiz, once a week', '/about', 'Find out more', 'pitch-last bleed'),
-        footer(quiz.publish_at)
+        pitch('About', 'A quiz for Saturday mornings', '/about', 'Find out more', 'pitch-last bleed')
       );
     } catch (err) {
       console.error('[quizz]', err);

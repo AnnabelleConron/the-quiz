@@ -204,12 +204,13 @@
 
 /* --- Dashboard --------------------------------------------------------
 
-   One row per edition: the number, its title, its status, when it goes
-   out, and the three places you can take it. */
+   One row per edition: its number, its status, when it goes out, and the
+   three places you can take it. The number is the edition's only name, so
+   it is set once, in the first cell, and carries the link. */
 
 .admin-table-head {
   display: grid;
-  grid-template-columns: var(--col-number-wide) 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: var(--space-1) var(--space-3);
   padding-top: var(--space-2);
   padding-bottom: var(--space-2);
@@ -227,7 +228,7 @@
 
 .admin-row {
   display: grid;
-  grid-template-columns: var(--col-number-wide) 1fr auto;
+  grid-template-columns: 1fr auto;
   align-items: baseline;
   gap: var(--space-1) var(--space-3);
   padding: var(--space-3) 0 var(--space-4);
@@ -241,11 +242,6 @@
   border-bottom: var(--rule-section);
 }
 
-.admin-row-number {
-  font-size: var(--fs-label-data);
-  letter-spacing: var(--track-numeral);
-}
-
 .admin-row-title {
   font-family: var(--font-read);
   font-weight: normal;
@@ -254,22 +250,14 @@
   letter-spacing: normal;
 }
 
-.admin-row-title.is-untitled {
-  color: var(--grey);
-}
-
-.admin-row-title.is-untitled a {
-  color: var(--grey);
-}
-
 .admin-row-date {
-  grid-column: 2 / -1;
+  grid-column: 1 / -1;
   margin-top: var(--space-1);
   color: var(--grey);
 }
 
 .admin-row-actions {
-  grid-column: 2 / -1;
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -311,17 +299,6 @@
   color: var(--grey);
 }
 
-/* A note about the field above it, not a second label: reading size, set in
-   the reading face, and quiet. It sits under the control inside the field's
-   grid cell. */
-.field-note {
-  margin-top: var(--space-2);
-  max-width: var(--measure-note);
-  font-size: var(--fs-read-sm);
-  line-height: var(--lh-prose);
-  color: var(--grey);
-}
-
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--measure-field), 1fr));
@@ -334,6 +311,12 @@
    boundary is drawn once. */
 .editor-meta {
   padding: var(--space-5) 0 var(--space-5);
+}
+
+/* The publish field stands alone here. Held to the form measure so a date
+   does not stretch the width of the editor. */
+.editor-meta .field {
+  max-width: var(--measure-form);
 }
 
 /* The category band stays in view while its four questions scroll past,
@@ -357,6 +340,11 @@
 
 .editor-category-name {
   margin-top: var(--space-4);
+}
+
+/* The explainer follows the name and closes the category's own block, so it
+   carries the space that separates the block from the first question. */
+.editor-category-note {
   margin-bottom: var(--space-5);
 }
 

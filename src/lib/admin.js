@@ -156,7 +156,7 @@ export async function fetchQuizById(id) {
   const { data, error } = await supabase
     .from('quizzes')
     .select(
-      'id, edition_number, title, publish_at, status, categories(id, name, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
+      'id, edition_number, publish_at, status, categories(id, name, description, sort_order), questions(id, category_id, sort_order, question_text, answer_text)'
     )
     .eq('id', id)
     .maybeSingle();
