@@ -97,12 +97,7 @@ import Base from '../../layouts/Base.astro';
     write.addEventListener('click', onCreate);
     return el('div', { class: 'admin-empty bleed' }, [
       el('p', { class: 'label muted', text: 'No quizzes yet' }),
-      el('p', {
-        class: 'admin-empty-text',
-        text:
-          'Nothing has been written yet. The first edition will be No. 01, and it publishes ' +
-          'the Saturday morning after it is scheduled.',
-      }),
+      el('p', { class: 'admin-empty-text', text: 'Create the first edition' }),
       write,
     ]);
   }
