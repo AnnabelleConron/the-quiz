@@ -124,6 +124,10 @@
   font-size: var(--fs-display-xl);
 }
 
+.pitch-title:first-child {
+  margin-top: 0;
+}
+
 /* The interval the body paragraph used to carry in its bottom margin. With
    the paragraph gone the action owns it, so the heading and the button do
    not collapse against each other. */
@@ -140,8 +144,8 @@
 
 /* --- Archive ----------------------------------------------------------
 
-   Every edition as one ruled line: the number, and the four categories it
-   ran. No date, no average, no completion count. */
+   Every edition as one ruled line: the number, and the categories it
+   ran, the final included. No date, no average, no completion count. */
 
 .count-strip {
   padding-block: var(--space-2);
@@ -279,7 +283,7 @@
   color: var(--grey);
 }
 
-/* Contents. The week's four categories, set at the scale they will be
+/* Contents. The week's three categories and the final question, set at the scale they will be
    met at further down the page. */
 /* No closing rule: the first category band opens with one of its own, and a
    boundary is drawn once. */
@@ -325,16 +329,7 @@
   background-color: var(--wash);
 }
 
-.category-meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  letter-spacing: var(--track-label-wide);
-  color: var(--grey);
-}
-
 .category-name {
-  margin-top: var(--space-2);
   font-size: var(--fs-display-lg);
 }
 
@@ -483,14 +478,6 @@
   margin-top: var(--space-5);
 }
 
-.score-breakdown > .label {
-  letter-spacing: var(--track-label-wide);
-}
-
-.breakdown-list {
-  margin-top: var(--space-3);
-}
-
 .breakdown-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -534,10 +521,13 @@
 }
 
 .endnote-text {
-  margin-top: var(--space-3);
   font-size: var(--fs-read-lg);
 }
 
 .endnote-back {
   margin-top: var(--space-4);
+}
+
+.endnote > :first-child {
+  margin-top: 0;
 }

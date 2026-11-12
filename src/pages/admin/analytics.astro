@@ -4,13 +4,13 @@
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Analytics" noIndex={true} bodyClass="admin">
+<Base title="Friday 13, Analytics" noIndex={true} bodyClass="admin">
   <div id="admin-app"></div>
 </Base>
 
 <script>
   import { supabase } from '../../lib/supabase.js';
-  import { el, pad2 } from '../../lib/quiz-render.js';
+  import { el, pad2, TOTAL_QUESTIONS } from '../../lib/quiz-render.js';
   import {
     requireAdmin,
     adminNav,
@@ -70,7 +70,7 @@ import Base from '../../layouts/Base.astro';
         ]),
         el('td', {}, [statusChip(quiz)]),
         figure(count, maxCompletions),
-        figure(avg, 16),
+        figure(avg, TOTAL_QUESTIONS),
       ]);
     });
 
@@ -87,8 +87,7 @@ import Base from '../../layouts/Base.astro';
           ]),
         ]),
         el('tbody', {}, rows),
-      ]),
-      el('p', { class: 'admin-note mono', text: 'All times Melbourne' })
+      ])
     );
   }
 
@@ -170,7 +169,7 @@ import Base from '../../layouts/Base.astro';
       if (id) await renderQuiz(id);
       else await renderOverview();
     } catch (err) {
-      console.error('[quizz admin]', err);
+      console.error('[friday13 admin]', err);
       root.replaceChildren(
         adminNav('analytics'),
         el('p', { class: 'load-error', text: 'Could not load analytics.' })

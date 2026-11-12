@@ -275,7 +275,7 @@
 
 .admin-empty-text {
   max-width: var(--measure-note);
-  margin: var(--space-3) 0 var(--space-5);
+  margin: 0 0 var(--space-5);
   font-size: var(--fs-read);
   line-height: var(--lh-loose);
 }
@@ -319,7 +319,7 @@
   max-width: var(--measure-form);
 }
 
-/* The category band stays in view while its four questions scroll past,
+/* The category band stays in view while its questions scroll past,
    so it is always clear which one is being written. */
 .editor-category-head {
   position: sticky;

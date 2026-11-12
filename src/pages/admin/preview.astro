@@ -4,7 +4,7 @@
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Preview" noIndex={true}>
+<Base title="Friday 13, Preview" noIndex={true}>
   <div id="admin-app"></div>
 </Base>
 
@@ -30,14 +30,10 @@ import Base from '../../layouts/Base.astro';
         return;
       }
       const quizRoot = el('main');
-      root.replaceChildren(
-        adminNav(),
-        el('p', { class: 'mono admin-note', text: 'Preview. Marking here is not recorded.' }),
-        quizRoot
-      );
+      root.replaceChildren(adminNav(), quizRoot);
       await initQuiz(quizRoot, { quiz, preview: true });
     } catch (err) {
-      console.error('[quizz admin]', err);
+      console.error('[friday13 admin]', err);
       root.replaceChildren(adminNav(), el('p', { text: 'Could not load the quiz.' }));
     }
   })();

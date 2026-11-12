@@ -34,7 +34,7 @@ export async function getSession() {
 // or not, so the editorial side is never mistaken for the paper.
 function adminBrand() {
   return el('span', { class: 'admin-top-brand' }, [
-    el('span', { class: 'admin-top-name', text: 'The Quizz' }),
+    el('span', { class: 'admin-top-name', text: 'Friday 13' }),
     el('span', { class: 'admin-top-tag', text: 'Editorial' }),
   ]);
 }
@@ -204,12 +204,12 @@ export function utcForSydney(y, m, d, hh, mm) {
   return new Date(guess);
 }
 
-export function nextSaturdaySydney6am() {
+export function nextFridaySydney6am() {
   const now = new Date();
   for (let i = 1; i <= 7; i++) {
     const candidate = new Date(now.getTime() + i * 86400 * 1000);
     const p = sydneyParts(candidate);
-    if (p.weekday === 'Sat') return utcForSydney(p.y, p.m, p.d, 6, 0);
+    if (p.weekday === 'Fri') return utcForSydney(p.y, p.m, p.d, 6, 0);
   }
   return null;
 }

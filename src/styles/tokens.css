@@ -1,4 +1,4 @@
-/* The Quizz, design tokens.
+/* Friday 13, design tokens.
 
    This file is the contract. Nothing outside it declares a raw colour, a raw
    font size, or a raw border. If a value is needed that is not here, the fix
@@ -134,7 +134,7 @@
 
   /* Display scale. The design lives on the distance between the ends of
      this ladder, so the steps are deliberately far apart. */
-  --fs-display-xs: 1.3125rem; /* 21px   the upside-down answer */
+  --fs-display-xs: 1.3125rem; /* 21px   the revealed answer */
   --fs-display-sm: 1.5rem; /* 24px   score denominators */
   --fs-display-md: 1.875rem; /* 30px   stat numerals, archive edition numbers */
   --fs-display-lg: 2.25rem; /* 36px   category names */

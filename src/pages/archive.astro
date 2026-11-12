@@ -6,7 +6,7 @@ import Base from '../layouts/Base.astro';
 import SiteTop from '../components/SiteTop.astro';
 ---
 
-<Base title="The Quizz, Archive" description="Every edition of The Quizz." bodyClass="wide">
+<Base title="Friday 13, Archive" description="Every edition of Friday 13." bodyClass="wide">
   <SiteTop current="archive" />
   <main id="archive-app">
     <noscript>
@@ -136,7 +136,7 @@ import SiteTop from '../components/SiteTop.astro';
 
       root.replaceChildren(...parts);
     } catch (err) {
-      console.error('[quizz]', err);
+      console.error('[friday13]', err);
       root.replaceChildren(
         el('p', { class: 'load-error', text: 'Something went wrong loading the archive. Refresh to try again.' })
       );

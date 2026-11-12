@@ -5,10 +5,10 @@ import Base from '../layouts/Base.astro';
 import SiteTop from '../components/SiteTop.astro';
 
 const description =
-  'The Quizz is written by hand and published on Saturday mornings. Four categories, sixteen questions.';
+  'Friday 13 is written by hand and published on Friday mornings. Three categories and a final question, thirteen questions.';
 ---
 
-<Base title="The Quizz, About" description={description}>
+<Base title="Friday 13, About" description={description}>
   <SiteTop current="about" />
   <main>
     <div class="masthead masthead-about bleed">
@@ -16,15 +16,15 @@ const description =
     </div>
 
     <section class="about">
-      <h2 class="about-title">A quiz for Saturday mornings</h2>
+      <h2 class="about-title">A quiz for Friday mornings</h2>
       <p class="about-text">
-        The Quizz is published on Saturday mornings. Four categories,
-        sixteen questions.
+        Friday 13 is published on Friday mornings. Three categories and a
+        final question, thirteen questions.
       </p>
     </section>
 
     <footer class="site-footer">
-      <p class="label muted">New quizzes on Saturday mornings</p>
+      <p class="label muted">New quizzes on Friday mornings</p>
     </footer>
   </main>
 </Base>

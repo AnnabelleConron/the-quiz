@@ -1,19 +1,20 @@
 ---
-// Quiz editor: a publish date, 4 category names with optional explainers,
-// and 16 question and answer pairs.
+// Quiz editor: a publish date, 3 category names and the final question's
+// category name, each with an optional explainer, and 13 question and answer
+// pairs: four in each of the three categories, then the final question.
 // Save keeps ids stable (update in place) so existing responses stay linked.
 // The Schedule button refuses to schedule while anything is empty and lists
 // what is missing. The database trigger enforces the same rule.
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Editor" noIndex={true} bodyClass="editor">
+<Base title="Friday 13, Editor" noIndex={true} bodyClass="editor">
   <div id="admin-app"></div>
 </Base>
 
 <script>
   import { supabase } from '../../lib/supabase.js';
-  import { el, pad2 } from '../../lib/quiz-render.js';
+  import { el, pad2, isFinalCategory } from '../../lib/quiz-render.js';
   import {
     requireAdmin,
     adminNav,
@@ -59,14 +60,12 @@ import Base from '../../layouts/Base.astro';
       const nameInput = el('input', {
         type: 'text',
         value: category.name,
-        placeholder: 'Write category name',
       });
       // Optional, and the only optional field in the editor. It is never
       // named by the completeness check, so an edition schedules with all
       // four left blank.
       const descriptionArea = el('textarea', {
         rows: '2',
-        placeholder: 'Explain the category',
       });
       descriptionArea.value = category.description || '';
       categoryInputs.set(category.id, { name: nameInput, description: descriptionArea });
@@ -79,13 +78,11 @@ import Base from '../../layouts/Base.astro';
       const questionFields = catQuestions.map((q) => {
         const questionArea = el('textarea', {
           rows: '2',
-          placeholder: 'Write question',
         });
         questionArea.value = q.question_text;
         const answerInput = el('input', {
           type: 'text',
           value: q.answer_text,
-          placeholder: 'Write answer',
         });
         questionInputs.set(q.id, { question: questionArea, answer: answerInput });
         return el('div', { class: 'editor-question' }, [
@@ -97,11 +94,13 @@ import Base from '../../layouts/Base.astro';
         ]);
       });
 
-      // The band stays in view while its four questions scroll past, so it
-      // is always clear which category is being written.
+      // The band stays in view while its questions scroll past, so it is
+      // always clear which category is being written. The last band holds
+      // the final question alone.
+      const isFinal = isFinalCategory(index, categories);
       return el('section', { class: 'editor-category' }, [
         el('header', { class: 'editor-category-head mono bleed' }, [
-          el('span', { text: 'Category ' + pad2(index + 1) }),
+          el('span', { text: isFinal ? 'Final question' : 'Category ' + pad2(index + 1) }),
           el('span', { class: 'muted', text: range ? 'Q' + range : '' }),
         ]),
         field('Category name', nameInput, 'editor-category-name'),
@@ -251,7 +250,9 @@ import Base from '../../layouts/Base.astro';
       data.categories.forEach((c, i) => {
         if (!c.name) {
           issues.push({
-            label: 'Category ' + (i + 1) + ' name',
+            label: isFinalCategory(i, data.categories)
+              ? 'Final category name'
+              : 'Category ' + (i + 1) + ' name',
             input: categoryInputs.get(c.id).name,
           });
         }
@@ -468,7 +469,7 @@ import Base from '../../layouts/Base.astro';
     // the fact most likely to change your mind.
     //
     // Responses carry no quiz_id and reach a quiz only through question_id,
-    // and the editor already holds all sixteen. Counts are advisory: if either
+    // and the editor already holds all thirteen. Counts are advisory: if either
     // read fails the delete is still offered, just without numbers, rather
     // than blocked on a stat.
     async function readDeleteFacts() {
@@ -508,7 +509,7 @@ import Base from '../../layouts/Base.astro';
         state === 'live'
           ? 'Edition ' + number + ' is on the site now. Delete it permanently? '
           : 'Delete edition ' + number + ' permanently? ';
-      const removes = 'This removes the quiz, its sixteen questions and answers, ';
+      const removes = 'This removes the quiz, its thirteen questions and answers, ';
       if (!counts) {
         return opening + removes + 'and everything recorded against it. It cannot be undone.';
       }
@@ -563,7 +564,6 @@ import Base from '../../layouts/Base.astro';
       ]),
       issuesBox,
       el('section', { class: 'editor-meta' }, [
-        el('p', { class: 'label muted', text: 'Edition details' }),
         // One field, so no grid. The date is all an edition carries besides
         // its number.
         publishField,
@@ -590,7 +590,7 @@ import Base from '../../layouts/Base.astro';
       }
       renderEditor(quiz);
     } catch (err) {
-      console.error('[quizz admin]', err);
+      console.error('[friday13 admin]', err);
       root.replaceChildren(
         adminNav(),
         el('p', { class: 'load-error', text: 'Could not load the quiz.' })

@@ -10,20 +10,28 @@ import SiteTop from '../components/SiteTop.astro';
   <SiteTop current="home" />
   <main id="home-app">
     <noscript>
-      <p>The Quizz needs JavaScript to load this week's edition.</p>
+      <p>Friday 13 needs JavaScript to load this week's edition.</p>
     </noscript>
   </main>
 </Base>
 
 <script>
-  import { fetchLatestQuiz, formatDateline, pad2, el } from '../lib/quiz-render.js';
+  import {
+    fetchLatestQuiz,
+    formatDateline,
+    pad2,
+    el,
+    TOTAL_QUESTIONS,
+    FINAL_QUESTION,
+    isFinalCategory,
+  } from '../lib/quiz-render.js';
   import { loadProgress } from '../lib/session.js';
 
   const root = document.getElementById('home-app');
 
   function masthead() {
     return el('div', { class: 'masthead masthead-home' }, [
-      el('h1', { class: 'masthead-title', text: 'The Quizz' }),
+      el('h1', { class: 'masthead-title', text: 'Friday 13' }),
     ]);
   }
 
@@ -36,20 +44,23 @@ import SiteTop from '../components/SiteTop.astro';
     ]);
   }
 
-  // This week's edition: the four category names at the scale they are met
-  // at, and one way in.
+  // This week's edition: the three category names and the final question's
+  // at the scale they are met at, and one way in.
   function editionSection(quiz, categories, completed) {
     const section = el('section', { class: 'edition bleed' }, [
       el('div', { class: 'edition-head' }, [
         el('p', { class: 'label label-accent', text: "This week's edition" }),
-        el('p', { class: 'label muted', text: '16 questions' }),
+        el('p', { class: 'label muted', text: TOTAL_QUESTIONS + ' questions' }),
       ]),
       el(
         'ol',
         { class: 'contents-list' },
         categories.map((category, index) =>
           el('li', { class: 'contents-row' }, [
-            el('span', { class: 'contents-num mono', text: pad2(index + 1) }),
+            el('span', {
+              class: 'contents-num mono',
+              text: isFinalCategory(index, categories) ? pad2(FINAL_QUESTION) : pad2(index + 1),
+            }),
             el('h2', { class: 'contents-name', text: category.name }),
           ])
         )
@@ -65,7 +76,7 @@ import SiteTop from '../components/SiteTop.astro';
           el('p', { class: 'label muted', text: 'You played this edition' }),
           el('p', { class: 'score-figure' }, [
             el('span', { class: 'score-number numeral', text: pad2(completed.score) }),
-            el('span', { class: 'score-total numeral', text: '/16' }),
+            el('span', { class: 'score-total numeral', text: '/' + TOTAL_QUESTIONS }),
           ]),
           el('a', { class: 'btn', href, text: 'Review your answers' }),
         ])
@@ -103,11 +114,10 @@ import SiteTop from '../components/SiteTop.astro';
         root.replaceChildren(
           masthead(),
           el('section', { class: 'pitch pitch-last' }, [
-            el('p', { class: 'label muted', text: 'The Quizz' }),
             el('h2', { class: 'pitch-title', text: 'The first edition is on its way' }),
             el('p', {
               class: 'pitch-text',
-              text: 'Quizzes are published on Saturday mornings.',
+              text: 'Quizzes are published on Friday mornings.',
             }),
           ])
         );
@@ -122,10 +132,10 @@ import SiteTop from '../components/SiteTop.astro';
         dateline(quiz),
         editionSection(quiz, categories, completed),
         pitch('Past quizzes', 'Past quiz editions', '/archive', 'Visit the archives', ''),
-        pitch('About', 'A quiz for Saturday mornings', '/about', 'Find out more', 'pitch-last bleed')
+        pitch('About', 'A quiz for Friday mornings', '/about', 'Find out more', 'pitch-last bleed')
       );
     } catch (err) {
-      console.error('[quizz]', err);
+      console.error('[friday13]', err);
       root.replaceChildren(
         masthead(),
         el('p', { class: 'load-error', text: 'Something went wrong. Refresh to try again.' })

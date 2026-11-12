@@ -1,4 +1,4 @@
-/* The Quizz, single stylesheet entry point.
+/* Friday 13, single stylesheet entry point.
 
    Split by role, not by page. Import order is the cascade order and is
    load-bearing: tokens define the vocabulary, base sets the ground,

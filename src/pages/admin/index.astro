@@ -3,18 +3,18 @@
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="The Quizz, Admin" noIndex={true} bodyClass="admin">
+<Base title="Friday 13, Admin" noIndex={true} bodyClass="admin">
   <div id="admin-app"></div>
 </Base>
 
 <script>
   import { supabase } from '../../lib/supabase.js';
-  import { el, pad2 } from '../../lib/quiz-render.js';
+  import { el, pad2, TOTAL_QUESTIONS } from '../../lib/quiz-render.js';
   import {
     requireAdmin,
     adminNav,
     statusChip,
-    nextSaturdaySydney6am,
+    nextFridaySydney6am,
     formatSydney,
   } from '../../lib/admin.js';
 
@@ -25,7 +25,7 @@ import Base from '../../layouts/Base.astro';
     errorLine.classList.add('hidden');
     try {
       const maxEdition = quizzes.reduce((max, q) => Math.max(max, q.edition_number), 0);
-      const publishAt = nextSaturdaySydney6am();
+      const publishAt = nextFridaySydney6am();
       const { data: quiz, error } = await supabase
         .from('quizzes')
         .insert({
@@ -45,10 +45,13 @@ import Base from '../../layouts/Base.astro';
 
       const sortedCats = [...cats].sort((a, b) => a.sort_order - b.sort_order);
       const questionRows = [];
-      for (let i = 0; i < 16; i++) {
+      // Questions 1 to 12 fall four to a category across the first three;
+      // the thirteenth is the final question, alone in the fourth.
+      for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+        const catIndex = i < 12 ? Math.floor(i / 4) : 3;
         questionRows.push({
           quiz_id: quiz.id,
-          category_id: sortedCats[Math.floor(i / 4)].id,
+          category_id: sortedCats[catIndex].id,
           sort_order: i + 1,
           question_text: '',
           answer_text: '',
@@ -59,7 +62,7 @@ import Base from '../../layouts/Base.astro';
 
       location.href = '/admin/edit?id=' + quiz.id;
     } catch (err) {
-      console.error('[quizz admin]', err);
+      console.error('[friday13 admin]', err);
       errorLine.textContent = 'Could not create the quiz: ' + (err.message || 'unknown error');
       errorLine.classList.remove('hidden');
       button.disabled = false;
@@ -94,7 +97,6 @@ import Base from '../../layouts/Base.astro';
     const write = el('button', { type: 'button', class: 'btn-primary', text: 'Write edition 01' });
     write.addEventListener('click', onCreate);
     return el('div', { class: 'admin-empty bleed' }, [
-      el('p', { class: 'label muted', text: 'No quizzes yet' }),
       el('p', { class: 'admin-empty-text', text: 'Create the first edition' }),
       write,
     ]);
@@ -134,10 +136,6 @@ import Base from '../../layouts/Base.astro';
     } else {
       parts.push(buildEmpty(create));
     }
-
-    // Each row carries its own AEST or AEDT, so this names the place rather
-    // than an offset that could not be right for every row in the list.
-    parts.push(el('p', { class: 'admin-note mono', text: 'All times Melbourne' }));
 
     root.replaceChildren(...parts);
   }

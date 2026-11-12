@@ -6,7 +6,16 @@
 import { supabase } from './supabase.js';
 import { getSessionId, loadProgress, saveProgress } from './session.js';
 
-const TOTAL_QUESTIONS = 16;
+// The format: three categories of four questions, then a final category
+// holding a single question, the thirteenth. Four category rows in all.
+export const TOTAL_QUESTIONS = 13;
+export const FINAL_QUESTION = 13;
+
+// The last category is the final question's own. It is named by the editor
+// like the others, but numbered and banded apart.
+export function isFinalCategory(index, categories) {
+  return index === categories.length - 1;
+}
 
 // Pen-stroke tick and cross, thin stroke, square caps. Static markup only.
 const TICK_SVG =
@@ -122,7 +131,7 @@ export async function fetchQuizStats(quizId) {
 
 export function buildShareText(editionNumber, score) {
   const url = location.origin + '/quiz/' + editionNumber;
-  return 'The Quizz #' + editionNumber + ', ' + score + '/16\n' + url;
+  return 'Friday 13 #' + editionNumber + ', ' + score + '/' + TOTAL_QUESTIONS + '\n' + url;
 }
 
 export async function copyToClipboard(text) {
@@ -197,7 +206,7 @@ export async function initQuiz(root, options = {}) {
   try {
     await render(root, options);
   } catch (err) {
-    console.error('[quizz]', err);
+    console.error('[friday13]', err);
     root.replaceChildren(
       el('p', { text: 'Something went wrong loading the quiz. Refresh to try again.' })
     );
@@ -270,7 +279,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
 
   frag.appendChild(
     el('div', { class: 'masthead' }, [
-      el('h1', { class: 'masthead-title', text: 'The Quizz' }),
+      el('h1', { class: 'masthead-title', text: 'Friday 13' }),
     ])
   );
 
@@ -283,11 +292,15 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     ])
   );
 
-  // Contents: the week's four categories at masthead scale, then the one
-  // line of instruction the page needs.
+  // Contents: the week's three categories and the final question at
+  // masthead scale. The final is numbered 13, after its question, so it
+  // stands apart from the three.
   const contentsRows = categories.map((category, index) =>
     el('li', { class: 'contents-row' }, [
-      el('span', { class: 'contents-num mono', text: pad2(index + 1) }),
+      el('span', {
+        class: 'contents-num mono',
+        text: isFinalCategory(index, categories) ? pad2(FINAL_QUESTION) : pad2(index + 1),
+      }),
       el('h2', { class: 'contents-name', text: category.name }),
     ])
   );
@@ -333,24 +346,13 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   // Scrolled to the end with questions still unmarked. Groups run ahead out
   // of curiosity, so this state has to read as deliberate.
   function buildIncompleteNote() {
-    const remaining = TOTAL_QUESTIONS - markedCount();
     const target = firstUnmarked();
-    const note = el('section', { class: 'endnote bleed' }, [
-      el('p', { class: 'label muted', text: "Editor's note" }),
-      el('p', {
-        class: 'endnote-text',
-        text:
-          'The score is set once every question is marked. ' +
-          (remaining === 1
-            ? 'One question is still unmarked.'
-            : remaining + ' questions are still unmarked.'),
-      }),
-    ]);
+    const note = el('section', { class: 'endnote bleed' });
     if (target) {
       const back = el('button', {
         type: 'button',
         class: 'endnote-back',
-        text: '↑ Back to question ' + pad2(target.sort_order),
+        text: 'Back to question ' + pad2(target.sort_order),
       });
       back.addEventListener('click', () => {
         const node = document.getElementById('question-' + target.id);
@@ -395,7 +397,6 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     const kept = rows.filter(Boolean);
     if (kept.length === 0) return null;
     return el('div', { class: 'score-breakdown' }, [
-      el('p', { class: 'label muted', text: 'By category' }),
       el('div', { class: 'breakdown-list' }, kept),
     ]);
   }
@@ -405,7 +406,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       buildScoreHead(),
       el('p', { class: 'score-figure' }, [
         el('span', { class: 'score-number numeral', text: pad2(score) }),
-        el('span', { class: 'score-total numeral', text: '/16' }),
+        el('span', { class: 'score-total numeral', text: '/' + TOTAL_QUESTIONS }),
       ]),
     ]);
 
@@ -457,7 +458,6 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     // no amount of retrying will change that, so say so and offer no button.
     if (submitWithdrawn) {
       return el('section', { class: 'endnote bleed', role: 'alert' }, [
-        el('p', { class: 'label muted', text: "Editor's note" }),
         el('p', {
           class: 'endnote-text',
           text:
@@ -474,7 +474,6 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
       submit();
     });
     return el('section', { class: 'endnote bleed', role: 'alert' }, [
-      el('p', { class: 'label muted', text: "Editor's note" }),
       el('p', {
         class: 'endnote-text',
         text: 'The score could not be sent. Check your connection.',
@@ -514,7 +513,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
     persist();
     lockMarking();
     endSlot.replaceChildren(buildScorePanel(score, avgScore, completionCount));
-    statusLine.textContent = 'Your score, ' + score + ' out of 16.';
+    statusLine.textContent = 'Your score, ' + score + ' out of ' + TOTAL_QUESTIONS + '.';
   }
 
   async function submit() {
@@ -581,9 +580,8 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   }
 
   function buildQuestion(q) {
-    // The rotation is purely visual, so screen readers read the answer
-    // normally. The hidden prefix gives it context when focus lands here.
-    const answer = el('span', { class: 'answer-upside-down', tabindex: '-1' }, [
+    // The hidden prefix gives the answer context when focus lands here.
+    const answer = el('span', { class: 'answer', tabindex: '-1' }, [
       el('span', { class: 'visually-hidden', text: 'Answer: ' }),
       document.createTextNode(q.answer_text),
     ]);
@@ -672,17 +670,7 @@ async function render(root, { edition, preview = false, quiz: presetQuiz = null 
   // there, and not repeated above every question.
   categories.forEach((category, index) => {
     const catQuestions = questionsByCategory.get(category.id) || [];
-    const first = catQuestions[0];
-    const last = catQuestions[catQuestions.length - 1];
-    const range = first && last ? pad2(first.sort_order) + '–' + pad2(last.sort_order) : '';
-
     const header = el('header', { class: 'category-header bleed' }, [
-      el('div', { class: 'category-meta mono' }, [
-        el('span', {
-          text: 'Category ' + pad2(index + 1) + ' of ' + pad2(categories.length),
-        }),
-        el('span', { text: range ? 'Q' + range : '' }),
-      ]),
       el('h2', { class: 'category-name', text: category.name }),
     ]);
 

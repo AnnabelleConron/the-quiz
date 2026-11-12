@@ -1,7 +1,8 @@
--- The Saturday Quiz, sample data for local testing.
+-- Friday 13, sample data for local testing.
 -- Not a migration. Seeds edition 1 as published.
 -- The quiz is created as a draft first because the completeness trigger
--- blocks publishing until 4 categories and 16 questions exist.
+-- blocks publishing until 4 categories and 13 questions exist, laid out
+-- 4/4/4/1: three categories of four, then the final question alone.
 -- To remove the sample data later, a single delete cascades through
 -- categories, questions, responses, and completions:
 --   delete from quizzes where edition_number = 1;
@@ -47,12 +48,9 @@ begin
     (v_quiz, v_cat, 12, 'What is the only mammal capable of true flight?', 'The bat');
 
   insert into categories (quiz_id, name, sort_order)
-  values (v_quiz, 'Sport', 4) returning id into v_cat;
+  values (v_quiz, 'The final question', 4) returning id into v_cat;
   insert into questions (quiz_id, category_id, sort_order, question_text, answer_text) values
-    (v_quiz, v_cat, 13, 'How many players from one team are on court in netball?', 'Seven'),
-    (v_quiz, v_cat, 14, 'Which country has won the most FIFA World Cups?', 'Brazil'),
-    (v_quiz, v_cat, 15, 'In which sport do Australia and England contest the Ashes?', 'Cricket'),
-    (v_quiz, v_cat, 16, 'How often are the Summer Olympic Games held?', 'Every four years');
+    (v_quiz, v_cat, 13, 'In which sport do Australia and England contest the Ashes?', 'Cricket');
 
   update quizzes set status = 'published' where id = v_quiz;
 end $$;

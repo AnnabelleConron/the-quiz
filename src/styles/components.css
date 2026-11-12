@@ -455,13 +455,12 @@ textarea {
   letter-spacing: var(--track-display);
 }
 
-/* --- The upside-down answer ------------------------------------------
+/* --- The answer ------------------------------------------------------
 
-   An homage to printed quizzes. Set in the display face between two rules,
-   so it reads as a strip cut from the foot of a page. */
+   Set upright in the display face between two rules, so it reads as a
+   strip cut from the foot of a page. */
 
-.answer-upside-down {
-  transform: rotate(180deg);
+.answer {
   display: inline-block;
   font-family: var(--font-display);
   font-size: var(--fs-display-xs);
